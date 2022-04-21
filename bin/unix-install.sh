@@ -262,7 +262,6 @@ if [ ! -z ${success+x} ]; then
   echo "If you would like, you can dump the settings to a file manually by running the command" ||
   echo "rs-client -d rsudp_settings.json"
 
-
   if [ -z ${previous_conda+x} ]; then
     if [ -z ${sourced+x} ]; then
       echo 'You will need to tell your shell where to find conda by entering ". ~/'"$release"'/etc/profile.d/conda.sh"'
