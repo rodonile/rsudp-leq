@@ -509,6 +509,12 @@ def get_inventory(sender='get_inventory'):
 		printW('No station name given, continuing without inventory.',
 				sender)
 		inv = False
+	elif 'R6833' in stn:
+		printW('R6833 station is not online. Importing offline inventory file.')
+		inv = read_inventory('inventory_files/1Dv7_empa.xml')
+		region = FlinnEngdahl().get_region(inv[0][0].longitude, inv[0][0].latitude)
+		printM('Inventory fetch successful. Station region is %s' % (region), sender)
+
 	else:
 		try:
 			printM('Fetching inventory for station %s.%s from Raspberry Shake FDSN.'
