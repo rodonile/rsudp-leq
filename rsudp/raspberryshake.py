@@ -509,6 +509,7 @@ def get_inventory(sender='get_inventory'):
 		printW('No station name given, continuing without inventory.',
 				sender)
 		inv = False
+	# Not working so far (inventory file wrong format)
 	elif 'OFFLN' in stn:
 		printW('R6833 station is not online. Importing offline inventory file.')
 		local_inventory = '/home/pi/github/rsudp/rsudp/inventory_files/1Dv7_empa.xml'
