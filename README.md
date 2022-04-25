@@ -1,7 +1,10 @@
+"""" here: picture """"
+
 # About this branch:
 
 ## Use-case:
 
+"""" todo: complete readme """
 
 ![Raspberry Shake event logo](https://raw.githubusercontent.com/raspishake/rsudp/master/docs/_static/logo.png)
 # rsudp
