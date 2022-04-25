@@ -111,7 +111,7 @@ class Plot:
 				 seconds=30, spectrogram=True,
 				 fullscreen=False, kiosk=False,
 				 deconv=False, screencap=False,
-				 alert=True, testing=False):
+				 alert=True, testing=False, decibel=False):
 		"""
 		Initialize the plot process.
 
@@ -145,6 +145,9 @@ class Plot:
 		self.seconds = seconds
 		self.pkts_in_period = rs.tr * rs.numchns * self.seconds	# theoretical number of packets received in self.seconds
 		self.spectrogram = spectrogram
+
+		# Parameter for showing also dB as a plot
+		self.decibel = decibel
 
 		self._set_deconv(deconv)
 
@@ -346,6 +349,9 @@ class Plot:
 			self.nfft1 = self._nearest_pow_2(self.sps)
 			self.nlap1 = self.nfft1 * self.per_lap
 
+		# Add plot for dB
+		if self.decibel:
+			self.mult = 3
 
 	def _init_axes(self, i):
 		'''
