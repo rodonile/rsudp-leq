@@ -190,7 +190,7 @@ def run(settings, debug):
 		cha = settings['plot']['channels']
 		sec = settings['plot']['duration']
 		spec = settings['plot']['spectrogram']
-		dec = setting ['plot']['decibel']
+		dec = settings['plot']['decibel']
 		full = settings['plot']['fullscreen']
 		kiosk = settings['plot']['kiosk']
 		screencap = settings['plot']['eq_screenshots']
