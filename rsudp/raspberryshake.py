@@ -512,7 +512,8 @@ def get_inventory(sender='get_inventory'):
 
 	# rodonile: add offline inventory to enable offline unit deconvolution	
 	# Not working so far (error: "schema version not supported")
-	elif 'OFFLN' in stn or 'R6833' in stn:
+	elif 'OFFLN' in stn:
+		stn = 'R6833'
 		printW('R6833 station is not online. Importing offline inventory file.')
 		inv = read_inventory("/home/pi/github/rsudp/rsudp/inventory_files/R6833_response.xml")
 		region = FlinnEngdahl().get_region(inv[0][0].longitude, inv[0][0].latitude)

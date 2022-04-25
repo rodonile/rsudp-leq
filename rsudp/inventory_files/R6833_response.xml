@@ -13,7 +13,7 @@
 		<Description>
 			RASPBERRY SHAKE NETWORK
 		</Description>
-		<Station code="R6833" startDate="2022-04-22T05:53:33.749" endDate="2022-04-24T17:01:53.024" restrictedStatus="open">
+		<Station code="R6833" startDate="2022-04-22T05:53:33.749" endDate="2022-04-30T17:01:53.024" restrictedStatus="open">
 			<Latitude>
 				47.3963964
 			</Latitude>
@@ -31,7 +31,7 @@
 			<CreationDate>
 				2022-04-22T05:53:33.749
 			</CreationDate>
-			<Channel code="EHZ" startDate="2022-04-22T05:53:33.749" endDate="2022-04-24T17:01:53.024" restrictedStatus="open" locationCode="00">
+			<Channel code="EHZ" startDate="2022-04-22T05:53:33.749" endDate="2022-04-30T17:01:53.024" restrictedStatus="open" locationCode="00">
 				<Latitude>
 					47.3963964
 				</Latitude>
