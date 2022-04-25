@@ -1,2 +1,200 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<seiscomp xmlns="http://geofon.gfz-potsdam.de/ns/seiscomp3-schema/0.11" version="0.11"><Inventory><sensor publicID="Sensor-1D-RS-V8-VEL" name="S-1D-RS-V8-VEL" response="ResponsePAZ-1D-RS-V7-VEL"><description>Velocity</description><manufacturer>Raspberry Shake</manufacturer><unit>M/S</unit><remark>{"unit":"Velocity in Meters Per Second"}</remark></sensor><datalogger publicID="Datalogger-SHAKE-100hz" name="DL-RS-100"><gain>1</gain><maxClockDrift>0</maxClockDrift><decimation sampleRateNumerator="100" sampleRateDenominator="1"><digitalFilterChain>ResponseFIR-DL100</digitalFilterChain></decimation></datalogger><responsePAZ publicID="ResponsePAZ-1D-RS-V7-VEL" name="RP-1D-RS-V7-VEL"><type>A</type><gain>399650000</gain><gainFrequency>5</gainFrequency><normalizationFactor>673.744</normalizationFactor><normalizationFrequency>5</normalizationFrequency><numberOfZeros>3</numberOfZeros><numberOfPoles>4</numberOfPoles><zeros>(0,0) (0,0) (0,0)</zeros><poles>(-1,0) (-3.03,0) (-3.03,0) (-666.67,0)</poles></responsePAZ><responseFIR publicID="ResponseFIR-DL100" name="RF-DL100.stage_2"><gain>1</gain><decimationFactor>2</decimationFactor><delay>0</delay><correction>0</correction><numberOfCoefficients>38</numberOfCoefficients><symmetry>B</symmetry><coefficients>-0.000151873 0.000602538 -9.55046e-05 -0.000672574 -8.57924e-05 0.00101667 0.000443862 -0.00137953 -0.0010729 0.00164772 0.0020288 -0.00165744 -0.00330916 0.00120522 0.00482924 -7.07612e-05 -0.00640028 -0.00194821 0.0077177 0.0049948 -0.00836173 -0.00911258 0.00780703 0.0142144 -0.00542901 -0.0200678 0.000475993 0.0263035 0.00807014 -0.0324465 -0.0219791 0.0379693 0.0455535 -0.0423585 -0.0946718 0.0451835 0.314401 0.453841</coefficients></responseFIR><network publicID="AM.Network" code="AM"><start>2016-01-01T00:00:00.0000Z</start><description>RASPBERRY SHAKE NETWORK</description><netClass>p</netClass><archive>CAPS</archive><restricted>false</restricted><shared>true</shared><station publicID="R6833.Station" code="R6833"><start>2022-04-22T05:53:33.749Z</start><end>2022-04-24T17:01:53.024Z</end><description>Raspberry Shake Citizen Science Station</description><latitude>47.3963964</latitude><longitude>8.611990288</longitude><elevation>440</elevation><affiliation>RaspShake Network</affiliation><restricted>false</restricted><shared>true</shared><sensorLocation publicID="R6833.00.Location" code="00"><start>2022-04-22T05:53:33.749Z</start><end>2022-04-24T17:01:53.024Z</end><latitude>47.3963964</latitude><longitude>8.611990288</longitude><elevation>440</elevation><stream publicID="Stream/20220422055341.378299.6" code="EHZ" datalogger="Datalogger-SHAKE-100hz" sensor="Sensor-1D-RS-V8-VEL"><start>2022-04-22T05:53:33.749Z</start><end>2022-04-24T17:01:53.024Z</end><dataloggerChannel>0</dataloggerChannel><sensorChannel>0</sensorChannel><sampleRateNumerator>100</sampleRateNumerator><sampleRateDenominator>1</sampleRateDenominator><depth>0</depth><azimuth>0</azimuth><dip>-90</dip><gain>399650000</gain><gainFrequency>5</gainFrequency><gainUnit>M/S</gainUnit><format>Steim2</format><flags>CG</flags><restricted>false</restricted><shared>true</shared></stream></sensorLocation></station></network></Inventory></seiscomp>
+<seiscomp xmlns="http://geofon.gfz-potsdam.de/ns/seiscomp3-schema/0.11" version="0.11">
+	<Inventory>
+		<sensor publicID="Sensor-1D-RS-V8-VEL" name="S-1D-RS-V8-VEL" response="ResponsePAZ-1D-RS-V7-VEL">
+			<description>
+				Velocity
+			</description>
+			<manufacturer>
+				Raspberry Shake
+			</manufacturer>
+			<unit>
+				M/S
+			</unit>
+			<remark>
+				{"unit":"Velocity in Meters Per Second"}
+			</remark>
+		</sensor>
+		<datalogger publicID="Datalogger-SHAKE-100hz" name="DL-RS-100">
+			<gain>
+				1
+			</gain>
+			<maxClockDrift>
+				0
+			</maxClockDrift>
+			<decimation sampleRateNumerator="100" sampleRateDenominator="1">
+				<digitalFilterChain>
+					ResponseFIR-DL100
+				</digitalFilterChain>
+			</decimation>
+		</datalogger>
+		<responsePAZ publicID="ResponsePAZ-1D-RS-V7-VEL" name="RP-1D-RS-V7-VEL">
+			<type>
+				A
+			</type>
+			<gain>
+				399650000
+			</gain>
+			<gainFrequency>
+				5
+			</gainFrequency>
+			<normalizationFactor>
+				673.744
+			</normalizationFactor>
+			<normalizationFrequency>
+				5
+			</normalizationFrequency>
+			<numberOfZeros>
+				3
+			</numberOfZeros>
+			<numberOfPoles>
+				4
+			</numberOfPoles>
+			<zeros>
+				(0,0) (0,0) (0,0)
+			</zeros>
+			<poles>
+				(-1,0) (-3.03,0) (-3.03,0) (-666.67,0)
+			</poles>
+		</responsePAZ>
+		<responseFIR publicID="ResponseFIR-DL100" name="RF-DL100.stage_2">
+			<gain>
+				1
+			</gain>
+			<decimationFactor>
+				2
+			</decimationFactor>
+			<delay>
+				0
+			</delay>
+			<correction>
+				0
+			</correction>
+			<numberOfCoefficients>
+				38
+			</numberOfCoefficients>
+			<symmetry>
+				B
+			</symmetry>
+			<coefficients>
+				-0.000151873 0.000602538 -9.55046e-05 -0.000672574 -8.57924e-05 0.00101667 0.000443862 -0.00137953 -0.0010729 0.00164772 0.0020288 -0.00165744 -0.00330916 0.00120522 0.00482924 -7.07612e-05 -0.00640028 -0.00194821 0.0077177 0.0049948 -0.00836173 -0.00911258 0.00780703 0.0142144 -0.00542901 -0.0200678 0.000475993 0.0263035 0.00807014 -0.0324465 -0.0219791 0.0379693 0.0455535 -0.0423585 -0.0946718 0.0451835 0.314401 0.453841
+			</coefficients>
+		</responseFIR>
+		<network publicID="AM.Network" code="AM">
+			<start>
+				2016-01-01T00:00:00.0000Z
+			</start>
+			<description>
+				RASPBERRY SHAKE NETWORK
+			</description>
+			<netClass>
+				p
+			</netClass>
+			<archive>
+				CAPS
+			</archive>
+			<restricted>
+				false
+			</restricted>
+			<shared>
+				true
+			</shared>
+			<station publicID="R6833.Station" code="R6833">
+				<start>
+					2022-04-22T05:53:33.749Z
+				</start>
+				<end>
+					2022-04-30T17:01:53.024Z
+				</end>
+				<description>
+					Raspberry Shake Citizen Science Station
+				</description>
+				<latitude>
+					47.3963964
+				</latitude>
+				<longitude>
+					8.611990288
+				</longitude>
+				<elevation>
+					440
+				</elevation>
+				<affiliation>
+					RaspShake Network
+				</affiliation>
+				<restricted>
+					false
+				</restricted>
+				<shared>
+					true
+				</shared>
+				<sensorLocation publicID="R6833.00.Location" code="00">
+					<start>
+						2022-04-22T05:53:33.749Z
+					</start>
+					<end>
+						2022-04-30T17:01:53.024Z
+					</end>
+					<latitude>
+						47.3963964
+					</latitude>
+					<longitude>
+						8.611990288
+					</longitude>
+					<elevation>
+						440
+					</elevation>
+					<stream publicID="Stream/20220422055341.378299.6" code="EHZ" datalogger="Datalogger-SHAKE-100hz" sensor="Sensor-1D-RS-V8-VEL">
+						<start>
+							2022-04-22T05:53:33.749Z
+						</start>
+						<end>
+							2022-04-30T17:01:53.024Z
+						</end>
+						<dataloggerChannel>
+							0
+						</dataloggerChannel>
+						<sensorChannel>
+							0
+						</sensorChannel>
+						<sampleRateNumerator>
+							100
+						</sampleRateNumerator>
+						<sampleRateDenominator>
+							1
+						</sampleRateDenominator>
+						<depth>
+							0
+						</depth>
+						<azimuth>
+							0
+						</azimuth>
+						<dip>
+							-90
+						</dip>
+						<gain>
+							399650000
+						</gain>
+						<gainFrequency>
+							5
+						</gainFrequency>
+						<gainUnit>
+							M/S
+						</gainUnit>
+						<format>
+							Steim2
+						</format>
+						<flags>
+							CG
+						</flags>
+						<restricted>
+							false
+						</restricted>
+						<shared>
+							true
+						</shared>
+					</stream>
+				</sensorLocation>
+			</station>
+		</network>
+	</Inventory>
+</seiscomp>
