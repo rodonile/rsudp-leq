@@ -146,7 +146,7 @@ class Plot:
 		self.pkts_in_period = rs.tr * rs.numchns * self.seconds	# theoretical number of packets received in self.seconds
 		self.spectrogram = spectrogram
 
-		# Parameter for showing also dB as a plot
+		# Trigger parameter for showing also dB as a plot
 		self.decibel = decibel
 
 		self._set_deconv(deconv)
