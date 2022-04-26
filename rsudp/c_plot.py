@@ -111,7 +111,7 @@ class Plot:
 				 seconds=30, spectrogram=True,
 				 fullscreen=False, kiosk=False,
 				 deconv=False, screencap=False,
-				 alert=True, testing=False, decibel=False):
+				 alert=True, testing=False, decibel=False, leq=False):
 		"""
 		Initialize the plot process.
 
@@ -148,6 +148,7 @@ class Plot:
 
 		# Trigger parameters for showing also dB and Leq as plots
 		self.decibel = decibel
+		self.leq = leq
 
 		self._set_deconv(deconv)
 
@@ -349,8 +350,14 @@ class Plot:
 			self.nfft1 = self._nearest_pow_2(self.sps)
 			self.nlap1 = self.nfft1 * self.per_lap
 
-		# Add plot for dB
-		if self.decibel:
+		# Additional plots for dB and Leq
+		if self.spectrogram and (self.decibel ^ self.leq):
+			self.mult = 3
+		elif self.spectrogram and self.decibel and self.leq:
+			self.mult = 4
+		elif not self.spectrogram and (self.decibel ^ self.leq):
+			self.mult = 2
+		elif not self.spectrogram and self.decibel and self.leq:
 			self.mult = 3
 
 	def _init_axes(self, i):
@@ -370,6 +377,27 @@ class Plot:
 								1, 2, label=str(2)))#, sharex=ax[0]))
 				self.ax[1].set_facecolor(self.bgcolor)
 				self.ax[1].tick_params(colors=self.fgcolor, labelcolor=self.fgcolor)
+
+			# Add decibel plot
+			if self.decibel:
+				if self.mult == 2:
+					plot_number = 2
+				else:
+					plot_number = 3
+
+				self.ax.append(self.fig.add_subplot(self.num_chans*self.mult,
+								1, plot_number, label=str(plot_number)))#, sharex=ax[0]))
+				self.ax[plot_number - 1].set_facecolor(self.bgcolor)
+				self.ax[plot_number - 1].tick_params(colors=self.fgcolor, labelcolor=self.fgcolor)
+
+			# Add leq plot
+			if self.leq:
+				plot_number = self.mult
+				self.ax.append(self.fig.add_subplot(self.num_chans*self.mult,
+								1, plot_number, label=str(plot_number)))#, sharex=ax[0]))
+				self.ax[plot_number - 1].set_facecolor(self.bgcolor)
+				self.ax[plot_number - 1].tick_params(colors=self.fgcolor, labelcolor=self.fgcolor)
+
 		else:
 			# add axes that share either lines or spectrogram axis limits
 			s = i * self.mult	# plot selector
@@ -420,6 +448,10 @@ class Plot:
 		end = np.datetime64(self.stream[0].stats.endtime)	# numpy time
 
 		im = mpimg.imread(pr.resource_filename('rsudp', os.path.join('img', 'version1-01-small.png')))
+		
+		# Add EMPA logo (TODO: add variable to trigger this)
+		#im = mpimg.imread(pr.resource_filename('rsudp', os.path.join('img', 'empa_logo.png')))
+		
 		self.imax = self.fig.add_axes([0.015, 0.944, 0.2, 0.056], anchor='NW') # [left, bottom, right, top]
 		self.imax.imshow(im, aspect='equal', interpolation='sinc')
 		self.imax.axis('off')
@@ -458,6 +490,36 @@ class Plot:
 				self.ax[i*self.mult+1].imshow(np.flipud(sg**(1/float(10))), cmap='inferno',
 						extent=(self.seconds-(1/(self.sps/float(len(self.stream[i].data)))),
 								self.seconds,0,self.sps/2), aspect='auto')
+			
+			####################################################
+			# Plot decibels
+			#############################
+			if self.decibel:
+				if self.mult == 2:
+					plot_number = 2
+				else:
+					plot_number = 3
+				r = np.arange(start, end, np.timedelta64(int(1000/self.sps), 'ms'))[-len(
+						  self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]):]
+				mean = int(round(np.mean(self.stream[i].data)))
+				# add artist to lines list
+				self.lines.append(self.ax[plot_number - 1].plot(r,
+								  np.nan*(np.zeros(len(r))),
+								  label=self.stream[i].stats.channel, color=self.linecolor,
+								  lw=0.45)[0])
+				# set axis limits
+				self.ax[plot_number - 1].set_xlim(left=start.astype(datetime),
+											  right=end.astype(datetime))
+				self.ax[plot_number - 1].set_ylim(bottom=np.min(self.stream[i].data-mean)
+											  -np.ptp(self.stream[i].data-mean)*0.1,
+											  top=np.max(self.stream[i].data-mean)
+											  +np.ptp(self.stream[i].data-mean)*0.1)
+				# we can set line plot labels here, but not imshow labels
+				ylabel = self.stream[i].stats.units.strip().capitalize() if (' ' in self.stream[i].stats.units) else self.stream[i].stats.units
+				self.ax[plot_number - 1].set_ylabel(ylabel, color=self.fgcolor)
+				self.ax[plot_number - 1].legend(loc='upper left')	# legend and location
+				
+
 
 
 	def _setup_fig_manager(self):
@@ -578,6 +640,45 @@ class Plot:
 		self.ax[i*self.mult+1].set_xlabel('Time (UTC)', color=self.fgcolor)
 
 
+	def _update_decibel(self, i, start, end, mean):
+		'''
+		Updates the decibel plot with new data.
+		:param int i: the trace number
+		:param float mean: the mean of data in the trace
+		'''
+		# Spectrogram doesn't use self.lines, so in the list the entry for decibels is always at position 1 if present!
+		if self.mult == 2:
+			plot_number = 2
+			line_number = 1
+		else:
+			plot_number = 3
+			line_number = 1
+
+		comp = 1/self.per_lap
+		r = np.arange(start, end, np.timedelta64(int(1000/self.sps), 'ms'))[-len(
+					self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]):]
+		 
+		self.lines[line_number].set_ydata(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]-mean)
+		self.lines[line_number].set_xdata(r)	# (1/self.per_lap)/2
+		self.ax[plot_number - 1].set_xlim(left=start.astype(datetime)+timedelta(seconds=comp*1.5),
+										right=end.astype(datetime))
+		self.ax[plot_number - 1].set_ylim(bottom=np.min(self.stream[i].data-mean)
+										-np.ptp(self.stream[i].data-mean)*0.1,
+										top=np.max(self.stream[i].data-mean)
+										+np.ptp(self.stream[i].data-mean)*0.1)
+		# Uncomment to disable axes on decibel and set Time(UTC) as xlabel instead
+		#self.ax[plot_number - 1].tick_params(axis='x', which='both',
+		#		bottom=False, top=False, labelbottom=False)
+		#self.ax[plot_number - 1].set_xlabel('Time (UTC)', color=self.fgcolor)
+		self.ax[plot_number - 1].set_ylabel('dB', color=self.fgcolor)
+
+		# Uncomment to disable axes on velocity and set Time(UTC) as xlabel instead
+		#self.ax[0].tick_params(axis='x', which='both',
+		#		bottom=False, top=False, labelbottom=False)
+		#self.ax[0].set_xlabel('Time (UTC)', color=self.fgcolor)
+
+
+
 	def update_plot(self):
 		'''
 		Redraw the plot with new data.
@@ -598,9 +699,15 @@ class Plot:
 			self._set_ch_specific_label(i)
 			if self.spectrogram:
 				self._update_specgram(i, mean)
-			else:
+			#else:
 				# also can't be in the setup function
-				self.ax[i*self.mult].set_xlabel('Time (UTC)', color=self.fgcolor)
+			#	self.ax[i*self.mult].set_xlabel('Time (UTC)', color=self.fgcolor)
+			
+			if self.decibel:
+				self._update_decibel(i, start, end, mean)
+			
+			#if self.leq:
+			#	self._update_leq(i, mean)
 
 
 	def figloop(self):

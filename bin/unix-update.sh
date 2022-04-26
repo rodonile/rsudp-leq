@@ -112,6 +112,7 @@ fi
 
 if [ ! -z ${success+x} ]; then
   echo "rsudp has installed successfully!"
+  # Uncomment here if you want the update script to gather a new config file each time...
   #if [ -f $settings ]; then
   #  echo "Backing up old settings file..."
   #  if [ ! -z ${gnu+x} ]; then

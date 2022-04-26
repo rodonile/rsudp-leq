@@ -191,6 +191,7 @@ def run(settings, debug):
 		sec = settings['plot']['duration']
 		spec = settings['plot']['spectrogram']
 		dec = settings['plot']['decibel']
+		leq = settings['plot']['leq']
 		full = settings['plot']['fullscreen']
 		kiosk = settings['plot']['kiosk']
 		screencap = settings['plot']['eq_screenshots']
@@ -205,7 +206,7 @@ def run(settings, debug):
 		pq = mk_q()
 		PLOTTER = Plot(cha=cha, seconds=sec, spectrogram=spec,
 						fullscreen=full, kiosk=kiosk, deconv=deconv, q=pq,
-						screencap=screencap, alert=alert, testing=TESTING, decibel=dec)
+						screencap=screencap, alert=alert, testing=TESTING, decibel=dec, leq=leq)
 		# no mk_p() here because the plotter must be controlled by the main thread (this one)
 
 	if settings['forward']['enabled']:
