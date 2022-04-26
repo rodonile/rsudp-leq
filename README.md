@@ -2,6 +2,8 @@
 
 # About this fork:
 
+- Differences with upstream: [![GithubCompare](https://github.com/raspishake/rsudp/compare/master...rodonile:master)](https://github.com/raspishake/rsudp/compare/master...rodonile:master)
+
 ## Use-case:
 
 """" todo: complete readme """
