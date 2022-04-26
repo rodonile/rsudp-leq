@@ -503,8 +503,7 @@ class Plot:
 						  self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]):]
 				mean = int(round(np.mean(self.stream[i].data)))
 				# add artist to lines list
-				self.lines.append(self.ax[plot_number - 1].plot(r,
-								  np.nan*(np.zeros(len(r))),
+				self.lines.append(self.ax[plot_number - 1].plot(r, np.nan*(np.zeros(len(r))),
 								  label=self.stream[i].stats.channel, color=self.linecolor,
 								  lw=0.45)[0])
 				# set axis limits
@@ -518,6 +517,8 @@ class Plot:
 				ylabel = self.stream[i].stats.units.strip().capitalize() if (' ' in self.stream[i].stats.units) else self.stream[i].stats.units
 				self.ax[plot_number - 1].set_ylabel(ylabel, color=self.fgcolor)
 				self.ax[plot_number - 1].legend(loc='upper left')	# legend and location
+				self.ax[plot_number - 1].set_ylabel('dB', color=self.fgcolor)
+				self.ax[plot_number - 1].yaxis.set_major_formatter(EngFormatter(unit="dB"))
 				
 
 
@@ -658,14 +659,20 @@ class Plot:
 		r = np.arange(start, end, np.timedelta64(int(1000/self.sps), 'ms'))[-len(
 					self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]):]
 		 
-		self.lines[line_number].set_ydata(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]-mean)
+		#print("Mean value", mean) # debugging
+		self.lines[line_number].set_ydata(20 * np.log10(np.abs(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]) / (1e-9)) - mean)
 		self.lines[line_number].set_xdata(r)	# (1/self.per_lap)/2
 		self.ax[plot_number - 1].set_xlim(left=start.astype(datetime)+timedelta(seconds=comp*1.5),
-										right=end.astype(datetime))
-		self.ax[plot_number - 1].set_ylim(bottom=np.min(self.stream[i].data-mean)
-										-np.ptp(self.stream[i].data-mean)*0.1,
-										top=np.max(self.stream[i].data-mean)
-										+np.ptp(self.stream[i].data-mean)*0.1)
+										  right=end.astype(datetime))
+		#self.ax[plot_number - 1].set_ylim(bottom=np.min(self.stream[i].data-mean) - np.ptp(self.stream[i].data-mean)*0.1,
+		#								  top=np.max(self.stream[i].data-mean) + np.ptp(self.stream[i].data-mean)*0.1 )
+		self.ax[plot_number - 1].set_ylim(bottom=0,
+										  top=20 * np.log10(np.abs(np.max(self.stream[i].data-mean)) / (1e-9)) + 0.1 * 20 * np.log10(np.abs(np.ptp(self.stream[i].data-mean)) / (1e-9)) )
+
+		# DEBUGGING
+		#print(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))])
+		#print(20 * np.log10(np.abs(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]) / (1e-9)) - mean)
+
 		# Uncomment to disable axes on decibel and set Time(UTC) as xlabel instead
 		#self.ax[plot_number - 1].tick_params(axis='x', which='both',
 		#		bottom=False, top=False, labelbottom=False)
@@ -676,6 +683,11 @@ class Plot:
 		#self.ax[0].tick_params(axis='x', which='both',
 		#		bottom=False, top=False, labelbottom=False)
 		#self.ax[0].set_xlabel('Time (UTC)', color=self.fgcolor)
+
+		if self.deconv:
+			#unit = rs.UNITS['VEL'][1]
+			unit = "dB"
+			self.ax[plot_number - 1].yaxis.set_major_formatter(EngFormatter(unit=unit))
 
 
 
