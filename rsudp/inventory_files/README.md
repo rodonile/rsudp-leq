@@ -1,3 +1,6 @@
+# Important
+- you need to change all occurrencies of R6833 with your shake's ID
+
 # How to gather the inventory file
 
 - Change the station number before running!
