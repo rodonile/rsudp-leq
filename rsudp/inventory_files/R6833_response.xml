@@ -5,7 +5,7 @@
     <Created>2022-04-25T08:39:48.843139</Created>
     <Network code="AM" startDate="2016-01-01T00:00:00" restrictedStatus="open">
         <Description>RASPBERRY SHAKE NETWORK</Description>
-        <Station code="R6833" startDate="2022-04-22T05:53:33.749" endDate="2022-04-30T17:01:53.024" restrictedStatus="open">
+        <Station code="R6833" startDate="2022-04-22T05:53:33.749" endDate="2100-01-01T00:00:00.000" restrictedStatus="open">
             <Latitude>47.3963964</Latitude>
             <Longitude>8.611990288</Longitude>
             <Elevation>440</Elevation>
@@ -13,7 +13,7 @@
                 <Name>Raspberry Shake Citizen Science Station</Name>
             </Site>
             <CreationDate>2022-04-22T05:53:33.749</CreationDate>
-            <Channel code="EHZ" startDate="2022-04-22T05:53:33.749" endDate="2022-04-30T17:01:53.024" restrictedStatus="open" locationCode="00">
+            <Channel code="EHZ" startDate="2022-04-22T05:53:33.749" endDate="2100-01-01T00:00:00.000" restrictedStatus="open" locationCode="00">
                 <Latitude>47.3963964</Latitude>
                 <Longitude>8.611990288</Longitude>
                 <Elevation>440</Elevation>
