@@ -510,8 +510,8 @@ def get_inventory(sender='get_inventory'):
 				sender)
 		inv = False
 
-	# rodonile: add offline inventory to enable offline unit deconvolution	
-	# Not working so far (error: "schema version not supported")
+	# Parse offline inventory to enable offline unit deconvolution
+	# IMPORTANT: change path to match your inventory file location
 	elif 'OFFLN' in stn:
 		stn = 'R6833'
 		printW('R6833 station is not online. Importing offline inventory file.')

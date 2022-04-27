@@ -677,7 +677,7 @@ class Plot:
 		#self.ax[plot_number - 1].tick_params(axis='x', which='both',
 		#		bottom=False, top=False, labelbottom=False)
 		#self.ax[plot_number - 1].set_xlabel('Time (UTC)', color=self.fgcolor)
-		self.ax[plot_number - 1].set_ylabel('dB', color=self.fgcolor)
+		self.ax[plot_number - 1].set_ylabel('Intensity', color=self.fgcolor)
 
 		# Uncomment to disable axes on velocity and set Time(UTC) as xlabel instead
 		#self.ax[0].tick_params(axis='x', which='both',
