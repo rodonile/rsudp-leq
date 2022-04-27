@@ -47,6 +47,11 @@ except Exception as e:
 	printE('detail: %s' % e, sender, spaces=True)
 	MPL = False
 
+# Random decision function (debugging)
+import random
+def decision(probability):
+    return random.random() < probability
+
 ICON = 'icon.ico'
 ICON2 = 'icon.png'
 
@@ -380,10 +385,10 @@ class Plot:
 
 			# Add decibel plot
 			if self.decibel:
-				if self.mult == 2:
-					plot_number = 2
-				else:
+				if self.spectrogram:
 					plot_number = 3
+				else:
+					plot_number = 2
 
 				self.ax.append(self.fig.add_subplot(self.num_chans*self.mult,
 								1, plot_number, label=str(plot_number)))#, sharex=ax[0]))
@@ -392,7 +397,7 @@ class Plot:
 
 			# Add leq plot
 			if self.leq:
-				plot_number = self.mult
+				plot_number = self.mult 	# leq alway added as last plot
 				self.ax.append(self.fig.add_subplot(self.num_chans*self.mult,
 								1, plot_number, label=str(plot_number)))#, sharex=ax[0]))
 				self.ax[plot_number - 1].set_facecolor(self.bgcolor)
@@ -467,7 +472,7 @@ class Plot:
 			# add artist to lines list
 			self.lines.append(self.ax[i*self.mult].plot(r,
 							  np.nan*(np.zeros(len(r))),
-							  label=self.stream[i].stats.channel, color=self.linecolor,
+							  label=self.stream[i].stats.channel + " velocity [m/s]", color=self.linecolor,
 							  lw=0.45)[0])
 			# set axis limits
 			self.ax[i*self.mult].set_xlim(left=start.astype(datetime),
@@ -492,13 +497,43 @@ class Plot:
 								self.seconds,0,self.sps/2), aspect='auto')
 			
 			####################################################
-			# Plot decibels
-			#############################
+			# Plot decibels with Leq line
+			####################################################
 			if self.decibel:
-				if self.mult == 2:
-					plot_number = 2
-				else:
+				if self.spectrogram:
 					plot_number = 3
+				else:
+					plot_number = 2
+				r = np.arange(start, end, np.timedelta64(int(1000/self.sps), 'ms'))[-len(
+						  self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]):]
+				mean = int(round(np.mean(self.stream[i].data)))
+				# add artist to lines list
+				self.lines.append(self.ax[plot_number - 1].plot(r, np.nan*(np.zeros(len(r))),			# dB
+								  label=self.stream[i].stats.channel + " intensity [dB]", color=self.linecolor,
+								  lw=0.45)[0])
+				self.lines.append(self.ax[plot_number - 1].plot(r, np.nan*(np.zeros(len(r))),			# Leq value
+								  label=self.stream[i].stats.channel + " Leq [dB]", color="white",
+								  lw=0.8)[0])
+
+				# set axis limits
+				self.ax[plot_number - 1].set_xlim(left=start.astype(datetime),
+											  right=end.astype(datetime))
+				self.ax[plot_number - 1].set_ylim(bottom=np.min(self.stream[i].data-mean)
+											  -np.ptp(self.stream[i].data-mean)*0.1,
+											  top=np.max(self.stream[i].data-mean)
+											  +np.ptp(self.stream[i].data-mean)*0.1)
+				# we can set line plot labels here, but not imshow labels
+				ylabel = self.stream[i].stats.units.strip().capitalize() if (' ' in self.stream[i].stats.units) else self.stream[i].stats.units
+				self.ax[plot_number - 1].legend(loc='lower left')	# legend and location
+				self.ax[plot_number - 1].set_ylabel('Intensity', color=self.fgcolor)
+				self.ax[plot_number - 1].yaxis.set_major_formatter(EngFormatter(unit="dB"))
+				
+			####################################################
+			# Plot standalone Leq
+			####################################################
+			if self.leq:
+				plot_number = self.mult		# leq alway added as last plot
+				
 				r = np.arange(start, end, np.timedelta64(int(1000/self.sps), 'ms'))[-len(
 						  self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]):]
 				mean = int(round(np.mean(self.stream[i].data)))
@@ -517,10 +552,8 @@ class Plot:
 				ylabel = self.stream[i].stats.units.strip().capitalize() if (' ' in self.stream[i].stats.units) else self.stream[i].stats.units
 				self.ax[plot_number - 1].set_ylabel(ylabel, color=self.fgcolor)
 				self.ax[plot_number - 1].legend(loc='upper left')	# legend and location
-				self.ax[plot_number - 1].set_ylabel('dB', color=self.fgcolor)
+				self.ax[plot_number - 1].set_ylabel('Leq', color=self.fgcolor)
 				self.ax[plot_number - 1].yaxis.set_major_formatter(EngFormatter(unit="dB"))
-				
-
 
 
 	def _setup_fig_manager(self):
@@ -648,19 +681,79 @@ class Plot:
 		:param float mean: the mean of data in the trace
 		'''
 		# Spectrogram doesn't use self.lines, so in the list the entry for decibels is always at position 1 if present!
-		if self.mult == 2:
-			plot_number = 2
-			line_number = 1
-		else:
+		if self.spectrogram:
 			plot_number = 3
 			line_number = 1
+		else:
+			plot_number = 2
+			line_number = 1	
 
 		comp = 1/self.per_lap
 		r = np.arange(start, end, np.timedelta64(int(1000/self.sps), 'ms'))[-len(
 					self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]):]
-		 
-		#print("Mean value", mean) # debugging
-		self.lines[line_number].set_ydata(20 * np.log10(np.abs(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]) / (1e-9)) - mean)
+		
+		# Plot dB and Leq
+		self.lines[line_number].set_ydata(20 * np.log10(np.abs(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean) / (1e-9)))
+		r_ones = np.ones(r.shape)
+		self.lines[line_number].set_xdata(r)
+		self.lines[line_number + 1].set_ydata(r_ones * 10 * np.log10(np.power(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean, 2).mean() / (1e-9)**2))
+		self.lines[line_number + 1].set_xdata(r)
+		self.ax[plot_number - 1].set_xlim(left=start.astype(datetime)+timedelta(seconds=comp*1.5),
+										  right=end.astype(datetime))
+		#self.ax[plot_number - 1].set_ylim(bottom=np.min(self.stream[i].data-mean) - np.ptp(self.stream[i].data-mean)*0.1,
+		#								  top=np.max(self.stream[i].data-mean) + np.ptp(self.stream[i].data-mean)*0.1 )
+		self.ax[plot_number - 1].set_ylim(bottom=0,
+										  top=20 * np.log10(np.abs(np.max(self.stream[i].data-mean)) / (1e-9)) + 0.1 * 20 * np.log10(np.abs(np.ptp(self.stream[i].data-mean)) / (1e-9)) )
+
+		# DEBUGGING lines
+		#print(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))])
+		#print(20 * np.log10(np.abs(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]) / (1e-9)) - mean)
+
+		# Uncomment to disable axes on decibel plot and set Time(UTC) as xlabel instead
+		#self.ax[plot_number - 1].tick_params(axis='x', which='both',
+		#		bottom=False, top=False, labelbottom=False)
+		#self.ax[plot_number - 1].set_xlabel('Time (UTC)', color=self.fgcolor)
+		self.ax[plot_number - 1].set_ylabel('Intensity', color=self.fgcolor)
+
+		# Uncomment to disable axes on velocity plot and set Time(UTC) as xlabel instead
+		#self.ax[0].tick_params(axis='x', which='both',
+		#		bottom=False, top=False, labelbottom=False)
+		#self.ax[0].set_xlabel('Time (UTC)', color=self.fgcolor)
+
+		if self.deconv:
+			unit = "dB"
+			self.ax[plot_number - 1].yaxis.set_major_formatter(EngFormatter(unit=unit))
+
+		# Leq value output:
+		print("Leq:", 10 * np.log10(np.power(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean, 2).mean() / (1e-9)**2))
+
+	def _update_leq(self, i, start, end, mean):
+		'''
+		Updates the decibel plot with new data.
+		:param int i: the trace number
+		:param float mean: the mean of data in the trace
+		'''
+
+		plot_number = self.mult		# leq is always last plot if present
+		# Spectrogram doesn't use self.lines, but intensity/dB plot uses 2 lines
+		if self.decibel:
+			line_number = 3
+		else:
+			line_number = 2	
+
+		comp = 1/self.per_lap
+		r = np.arange(start, end, np.timedelta64(int(1000/self.sps), 'ms'))[-len(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]):]
+
+		#if decision(0.2):		# Debug
+		#	print("full-array-time-interval: ", start, end, "timedelta: ", np.timedelta64(int(1000/self.sps), 'ms'))
+		#	print("section_start: ", int(-self.sps*(self.seconds-(comp/2))))
+		#	print("seconds: ", self.seconds)
+		#	print("section END: ", -int(self.sps*(comp/2)))
+
+		#print("Leq:", 10 * np.log10(np.power(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean, 2).mean() / (1e-9)**2))
+
+		r_ones = np.ones(r.shape)
+		self.lines[line_number].set_ydata(r_ones * 10 * np.log10(np.power(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean, 2).mean() / (1e-9)**2))
 		self.lines[line_number].set_xdata(r)	# (1/self.per_lap)/2
 		self.ax[plot_number - 1].set_xlim(left=start.astype(datetime)+timedelta(seconds=comp*1.5),
 										  right=end.astype(datetime))
@@ -669,27 +762,19 @@ class Plot:
 		self.ax[plot_number - 1].set_ylim(bottom=0,
 										  top=20 * np.log10(np.abs(np.max(self.stream[i].data-mean)) / (1e-9)) + 0.1 * 20 * np.log10(np.abs(np.ptp(self.stream[i].data-mean)) / (1e-9)) )
 
-		# DEBUGGING
+		# DEBUGGING lines
 		#print(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))])
 		#print(20 * np.log10(np.abs(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]) / (1e-9)) - mean)
 
-		# Uncomment to disable axes on decibel and set Time(UTC) as xlabel instead
+		# Uncomment to disable axes on leq plot and set Time(UTC) as xlabel instead
 		#self.ax[plot_number - 1].tick_params(axis='x', which='both',
 		#		bottom=False, top=False, labelbottom=False)
 		#self.ax[plot_number - 1].set_xlabel('Time (UTC)', color=self.fgcolor)
-		self.ax[plot_number - 1].set_ylabel('Intensity', color=self.fgcolor)
-
-		# Uncomment to disable axes on velocity and set Time(UTC) as xlabel instead
-		#self.ax[0].tick_params(axis='x', which='both',
-		#		bottom=False, top=False, labelbottom=False)
-		#self.ax[0].set_xlabel('Time (UTC)', color=self.fgcolor)
+		self.ax[plot_number - 1].set_ylabel('Leq', color=self.fgcolor)
 
 		if self.deconv:
-			#unit = rs.UNITS['VEL'][1]
 			unit = "dB"
 			self.ax[plot_number - 1].yaxis.set_major_formatter(EngFormatter(unit=unit))
-
-
 
 	def update_plot(self):
 		'''
@@ -707,6 +792,9 @@ class Plot:
 		i = 0
 		for i in range(self.num_chans):	# for each channel, update the plots
 			mean = int(round(np.mean(self.stream[i].data)))
+			# DEBUG
+			if mean != 0:
+				print(mean)
 			self._draw_lines(i, start, end, mean)
 			self._set_ch_specific_label(i)
 			if self.spectrogram:
@@ -718,8 +806,8 @@ class Plot:
 			if self.decibel:
 				self._update_decibel(i, start, end, mean)
 			
-			#if self.leq:
-			#	self._update_leq(i, mean)
+			if self.leq:
+				self._update_leq(i, start, end, mean)
 
 
 	def figloop(self):
