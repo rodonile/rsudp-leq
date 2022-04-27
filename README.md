@@ -1,12 +1,18 @@
-"""" here: picture """"
-
 # About this fork:
 
-- Differences with upstream: [![GithubCompare](https://github.com/raspishake/rsudp/compare/master...rodonile:master)](https://github.com/raspishake/rsudp/compare/master...rodonile:master)
+"""" here: picture """"
+
+- Upstream: [rsudp](https://github.com/raspishake/rsudp)
+- Differences with upstream: [GithubCompare](https://github.com/raspishake/rsudp/compare/master...rodonile:master)
 
 ## Use-case:
 
 """" todo: complete readme """
+
+## Instructions:
+
+
+# rsudp main README:
 
 ![Raspberry Shake event logo](https://raw.githubusercontent.com/raspishake/rsudp/master/docs/_static/logo.png)
 # rsudp
