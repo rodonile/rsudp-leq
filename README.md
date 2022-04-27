@@ -3,7 +3,9 @@
 
 # About this fork:
 
-- rsudp modified to add intensity and equivalent continuous sound level (Leq) 
+- rsudp extended to plot intensity and equivalent continuous sound level (Leq) 
+- ..... new alarm module...
+- coded and tested only for RS1D / 1 channel geophone
 - Upstream: [rsudp](https://github.com/raspishake/rsudp)
 - Differences with upstream: [GithubCompare](https://github.com/raspishake/rsudp/compare/master...rodonile:master)
 
