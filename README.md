@@ -1,13 +1,15 @@
+# The enhanced GUI:
+![GUI](docs/_images/rsudp_gui_rodonile.png)
+
 # About this fork:
 
-"""" here: picture """"
-
+- rsudp modified to add intensity and equivalent continuous sound level (Leq) 
 - Upstream: [rsudp](https://github.com/raspishake/rsudp)
 - Differences with upstream: [GithubCompare](https://github.com/raspishake/rsudp/compare/master...rodonile:master)
 
 ## Use-case:
 
-"""" todo: complete readme """
+- Main goal: small disturbance detection, i.e. trigger alarm on trains nearby, construction work, etc. that might disturb measurements in acoustically controlled environments 
 
 ## Instructions:
 
