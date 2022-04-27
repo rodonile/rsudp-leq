@@ -1,20 +1,21 @@
-# The enhanced GUI:
-![GUI](docs/_images/rsudp_gui_rodonile.png)
-
 # About this fork:
 
-- rsudp extended to plot intensity and equivalent continuous sound level (Leq) 
-- ..... new alarm module...
-- coded and tested only for RS1D / 1 channel geophone
-- Upstream: [rsudp](https://github.com/raspishake/rsudp)
+- [Rsudp](https://github.com/raspishake/rsudp) extended to plot intensity and equivalent continuous sound level (Leq) 
+- ..... new alarm module... (TODO: finish readme..)
+- Coded and tested only for RS1D / 1 channel geophone
 - Differences with upstream: [GithubCompare](https://github.com/raspishake/rsudp/compare/master...rodonile:master)
 
-## Use-case:
+## Use-cases:
 
 - Main goal: small disturbance detection, i.e. trigger alarm on trains nearby, construction work, etc. that might disturb measurements in acoustically controlled environments 
 
+## The enhanced live-plotting module:
+![GUI](docs/_images/rsudp_gui_rodonile.png)
+
+
 ## Instructions:
 
+- ... (TODO: finish readme..)
 
 # rsudp main README:
 
