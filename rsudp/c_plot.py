@@ -691,19 +691,31 @@ class Plot:
 		comp = 1/self.per_lap
 		r = np.arange(start, end, np.timedelta64(int(1000/self.sps), 'ms'))[-len(
 					self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]):]
-		
-		# Stream split in 10s chunks (if self.seconds > 10) for displaying STA Leq
-		#if self.seconds > 10
-		#	n_splits = 
-		#	r_split = np.split(r, self.seconds / 10)
 
-
-		# Plot dB and Leq
+		# Plot dB
 		self.lines[line_number].set_ydata(20 * np.log10(np.abs(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean) / (1e-9)))
-		r_ones = np.ones(r.shape)
 		self.lines[line_number].set_xdata(r)
-		self.lines[line_number + 1].set_ydata(r_ones * 10 * np.log10(np.power(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean, 2).mean() / (1e-9)**2))
+		
+		# Plot Leq
+		r_ones = np.ones(r.shape)
+		# Stream split in 10s chunks (if self.seconds > 10) for displaying STA Leq
+		splitting = False	# Need to debug, not working. For now disable
+		if splitting and self.seconds > 10:
+			n_splits = self.seconds / 10
+			#r_split = np.split(r, n_splits)
+			r_ones_split = np.split(r_ones, n_splits)
+			leq = []
+			for spl_nr in range(0, n_splits):
+				np.concatenate(leq, r_ones_split[spl_nr] * 10 * np.log10(np.power(self.stream[i]
+										.data[int(-self.sps*((self.seconds - spl_nr*10)-(comp/2))):int(-self.sps*((self.seconds - (spl_nr+1)*10)-(comp/2)))] - mean, 2)
+										.mean() / (1e-9)**2))
+		else:
+			leq = r_ones * 10 * np.log10(np.power(self.stream[i]
+											.data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean, 2).mean() / (1e-9)**2)
+
+		self.lines[line_number + 1].set_ydata(leq)
 		self.lines[line_number + 1].set_xdata(r)
+		
 		self.ax[plot_number - 1].set_xlim(left=start.astype(datetime)+timedelta(seconds=comp*1.5),
 										  right=end.astype(datetime))
 		self.ax[plot_number - 1].set_ylim(bottom=0,
