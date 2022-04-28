@@ -692,6 +692,12 @@ class Plot:
 		r = np.arange(start, end, np.timedelta64(int(1000/self.sps), 'ms'))[-len(
 					self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]):]
 		
+		# Stream split in 10s chunks (if self.seconds > 10) for displaying STA Leq
+		#if self.seconds > 10
+		#	n_splits = 
+		#	r_split = np.split(r, self.seconds / 10)
+
+
 		# Plot dB and Leq
 		self.lines[line_number].set_ydata(20 * np.log10(np.abs(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean) / (1e-9)))
 		r_ones = np.ones(r.shape)
@@ -700,8 +706,6 @@ class Plot:
 		self.lines[line_number + 1].set_xdata(r)
 		self.ax[plot_number - 1].set_xlim(left=start.astype(datetime)+timedelta(seconds=comp*1.5),
 										  right=end.astype(datetime))
-		#self.ax[plot_number - 1].set_ylim(bottom=np.min(self.stream[i].data-mean) - np.ptp(self.stream[i].data-mean)*0.1,
-		#								  top=np.max(self.stream[i].data-mean) + np.ptp(self.stream[i].data-mean)*0.1 )
 		self.ax[plot_number - 1].set_ylim(bottom=0,
 										  top=20 * np.log10(np.abs(np.max(self.stream[i].data-mean)) / (1e-9)) + 0.1 * 20 * np.log10(np.abs(np.ptp(self.stream[i].data-mean)) / (1e-9)) )
 
