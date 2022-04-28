@@ -7,6 +7,10 @@ from rsudp import COLOR, helpers
 from rsudp.test import TEST
 import numpy as np
 
+import random
+def probability(prob):
+    return random.random() < prob
+
 # set the terminal text color to green
 COLOR['current'] = COLOR['green']
 
@@ -160,7 +164,10 @@ class Alert_Leq(rs.ConsumerThread):
 
 		self.sps = rs.sps
 		self.inv = rs.inv
-		self.stalta = np.ndarray(1)
+		self.stalta = 0
+		self.leq_sta = 0
+		self.leq_lta = 0
+		self.stalta_trigger_time = 0
 		self.maxstalta = 0
 		self.units = 'counts'
 		
@@ -217,32 +224,29 @@ class Alert_Leq(rs.ConsumerThread):
 		'''
 		Filters the stream associated with this class.
 		'''
-		if self.filt:
-			if self.filt in 'bandpass':
-				self.stalta = recursive_sta_lta(
-							self.stream[0].copy().filter(type=self.filt,
-							freqmin=self.freqmin, freqmax=self.freqmax),
-							int(self.sta * self.sps), int(self.lta * self.sps))
-			else:
-				self.stalta = recursive_sta_lta(
-							self.stream[0].copy().filter(type=self.filt,
-							freq=self.freq),
-							int(self.sta * self.sps), int(self.lta * self.sps))
-		else:
-			self.stalta = recursive_sta_lta(self.stream[0],
-					int(self.sta * self.sps), int(self.lta * self.sps))
+		# For now we simple disable filters (we don't need them I think)
+
+		# LTA: dB and Leq
+		db_stream_lta = 20 * np.log10(np.abs(self.stream[0].data) / (1e-9))
+		self.leq_lta = 10 * np.log10(np.power(self.stream[0].data, 2).mean() / (1e-9)**2)
+
+		# STA: db and Leq
+		obstart_sta = self.stream[0].stats.endtime - timedelta(seconds=self.sta)
+		stream_sta = self.stream.slice(starttime=obstart_sta)			# slice the STA stream to the specified length (seconds variable)
+		db_stream_sta = 20 * np.log10(np.abs(stream_sta[0].data) / (1e-9))
+		self.leq_sta = 10 * np.log10(np.power(stream_sta[0].data, 2).mean() / (1e-9)**2)
+		self.stalta = self.leq_sta / self.leq_lta
+		self.stalta_trigger_time = self.stream[0].stats.endtime
 
 
 	def _is_trigger(self):
 		'''
 		Figures out it there's a trigger active.
 		'''
-		if self.stalta.max() > self.thresh:
+		if self.stalta > self.thresh:
 			if not self.exceed:
 				# raise a flag that the Producer can read and modify 
-				self.alarm = helpers.fsec(self.stream[0].stats.starttime + timedelta(seconds=
-										trigger_onset(self.stalta, self.thresh,
-										self.reset)[-1][0] * self.stream[0].stats.delta))
+				self.alarm = helpers.fsec(self.stalta_trigger_time)
 				self.exceed = True	# the state machine; this one should not be touched from the outside, otherwise bad things will happen
 				print()
 				printM('Trigger threshold of %s exceeded at %s'
@@ -254,17 +258,17 @@ class Alert_Leq(rs.ConsumerThread):
 			else:
 				pass
 
-			if self.stalta.max() > self.maxstalta:
-				self.maxstalta = self.stalta.max()
+			if self.stalta > self.maxstalta:
+				self.maxstalta = self.stalta
 		else:
 			if self.exceed:
-				if self.stalta[-1] < self.reset:
+				if self.stalta < self.reset:
 					self.alarm_reset = helpers.fsec(self.stream[0].stats.endtime)	# lazy; effective
 					self.exceed = False
 					print()
 					printM('Max STA/LTA ratio reached in alarm state: %s' % (round(self.maxstalta, 3)),
 							self.sender)
-					printM('Earthquake trigger reset and active again at %s' % (
+					printM('Leq trigger reset and active again at %s' % (
 							self.alarm_reset.strftime('%Y-%m-%d %H:%M:%S.%f')[:22]),
 							self.sender)
 					self.maxstalta = 0
@@ -286,9 +290,14 @@ class Alert_Leq(rs.ConsumerThread):
 					 len(self.stream[0].data) * self.stream[0].stats.delta)).strftime('%Y-%m-%d %H:%M:%S'),
 					self.sender,
 					self.thresh,
-					round(np.max(self.stalta[-50:]), 4)
+					self.stalta
 					)
 			print(COLOR['current'] + COLOR['bold'] + msg + COLOR['white'], end='', flush=True)
+
+			# Further debugging prints
+			# Leq value output (only print with 20% probability):
+			if probability(0.2):
+				print("STA: ", self.leq_sta, "LTA:", self.leq_lta)
 
 
 	def run(self):
@@ -301,6 +310,7 @@ class Alert_Leq(rs.ConsumerThread):
 		n = 0
 
 		wait_pkts = (self.lta) / (rs.tf / 1000)
+		#print("Wait_pkts: ", wait_pkts)
 
 		while n > 3:
 			self.getq()
@@ -312,6 +322,7 @@ class Alert_Leq(rs.ConsumerThread):
 
 			self.raw = rs.copy(self.raw)	# necessary to avoid memory leak
 			self.stream = self.raw.copy()
+
 			self._deconvolve()
 
 			if n > wait_pkts:
@@ -319,6 +330,9 @@ class Alert_Leq(rs.ConsumerThread):
 				obstart = self.stream[0].stats.endtime - timedelta(seconds=self.lta)	# obspy time
 				self.raw = self.raw.slice(starttime=obstart)		# slice the stream to the specified length (seconds variable)
 				self.stream = self.stream.slice(starttime=obstart)	# slice the stream to the specified length (seconds variable)
+
+				# Debug
+				#print("Alert stream start: ", obstart)
 
 				# filter
 				self._filter()
@@ -332,12 +346,12 @@ class Alert_Leq(rs.ConsumerThread):
 				self._print_stalta()
 
 			elif n == 0:
-				printM('Starting Alert trigger with sta=%ss, lta=%ss, and threshold=%s on channel=%s'
+				printM('Starting Alert_Leq trigger with sta=%ss, lta=%ss, and threshold=%s on channel=%s'
 					   % (self.sta, self.lta, self.thresh, self.cha), self.sender)
-				printM('Earthquake trigger warmup time of %s seconds...'
+				printM('Leq trigger warmup time of %s seconds...'
 					   % (self.lta), self.sender)
 			elif n == wait_pkts:
-				printM('Earthquake trigger up and running normally.',
+				printM('Leq trigger up and running normally.',
 					   self.sender)
 			else:
 				pass

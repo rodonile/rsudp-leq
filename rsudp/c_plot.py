@@ -49,8 +49,8 @@ except Exception as e:
 
 # Random decision function (debugging)
 import random
-def decision(probability):
-    return random.random() < probability
+def probability(prob):
+    return random.random() < prob
 
 ICON = 'icon.ico'
 ICON2 = 'icon.png'
@@ -721,27 +721,19 @@ class Plot:
 		self.ax[plot_number - 1].set_ylim(bottom=0,
 										  top=20 * np.log10(np.abs(np.max(self.stream[i].data-mean)) / (1e-9)) + 0.1 * 20 * np.log10(np.abs(np.ptp(self.stream[i].data-mean)) / (1e-9)) )
 
-		# DEBUGGING lines
-		#print(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))])
-		#print(20 * np.log10(np.abs(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]) / (1e-9)) - mean)
-
 		# Uncomment to disable axes on decibel plot and set Time(UTC) as xlabel instead
 		#self.ax[plot_number - 1].tick_params(axis='x', which='both',
 		#		bottom=False, top=False, labelbottom=False)
 		#self.ax[plot_number - 1].set_xlabel('Time (UTC)', color=self.fgcolor)
 		self.ax[plot_number - 1].set_ylabel('Intensity', color=self.fgcolor)
 
-		# Uncomment to disable axes on velocity plot and set Time(UTC) as xlabel instead
-		#self.ax[0].tick_params(axis='x', which='both',
-		#		bottom=False, top=False, labelbottom=False)
-		#self.ax[0].set_xlabel('Time (UTC)', color=self.fgcolor)
-
 		if self.deconv:
 			unit = "dB"
 			self.ax[plot_number - 1].yaxis.set_major_formatter(EngFormatter(unit=unit))
 
-		# Leq value output:
-		print("Leq:", 10 * np.log10(np.power(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean, 2).mean() / (1e-9)**2))
+		# Leq value output (only print with 20% probability):
+		#if probability(0.2):
+		#	print("Leq:", 10 * np.log10(np.power(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean, 2).mean() / (1e-9)**2))
 
 	def _update_leq(self, i, start, end, mean):
 		'''
@@ -759,28 +751,13 @@ class Plot:
 
 		comp = 1/self.per_lap
 		r = np.arange(start, end, np.timedelta64(int(1000/self.sps), 'ms'))[-len(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]):]
-
-		#if decision(0.2):		# Debug
-		#	print("full-array-time-interval: ", start, end, "timedelta: ", np.timedelta64(int(1000/self.sps), 'ms'))
-		#	print("section_start: ", int(-self.sps*(self.seconds-(comp/2))))
-		#	print("seconds: ", self.seconds)
-		#	print("section END: ", -int(self.sps*(comp/2)))
-
-		#print("Leq:", 10 * np.log10(np.power(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean, 2).mean() / (1e-9)**2))
-
 		r_ones = np.ones(r.shape)
 		self.lines[line_number].set_ydata(r_ones * 10 * np.log10(np.power(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean, 2).mean() / (1e-9)**2))
 		self.lines[line_number].set_xdata(r)	# (1/self.per_lap)/2
 		self.ax[plot_number - 1].set_xlim(left=start.astype(datetime)+timedelta(seconds=comp*1.5),
 										  right=end.astype(datetime))
-		#self.ax[plot_number - 1].set_ylim(bottom=np.min(self.stream[i].data-mean) - np.ptp(self.stream[i].data-mean)*0.1,
-		#								  top=np.max(self.stream[i].data-mean) + np.ptp(self.stream[i].data-mean)*0.1 )
 		self.ax[plot_number - 1].set_ylim(bottom=0,
 										  top=20 * np.log10(np.abs(np.max(self.stream[i].data-mean)) / (1e-9)) + 0.1 * 20 * np.log10(np.abs(np.ptp(self.stream[i].data-mean)) / (1e-9)) )
-
-		# DEBUGGING lines
-		#print(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))])
-		#print(20 * np.log10(np.abs(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]) / (1e-9)) - mean)
 
 		# Uncomment to disable axes on leq plot and set Time(UTC) as xlabel instead
 		#self.ax[plot_number - 1].tick_params(axis='x', which='both',
