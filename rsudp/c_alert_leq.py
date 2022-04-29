@@ -143,7 +143,7 @@ class Alert_Leq(rs.ConsumerThread):
 		STA-LTA trigger, filtering, and the channel used for listening.
 		"""
 		super().__init__()
-		self.sender = 'Alert'
+		self.sender = 'Alert_Leq'
 		self.alive = True
 		self.testing = testing
 
@@ -285,19 +285,16 @@ class Alert_Leq(rs.ConsumerThread):
 		Print the current max STA/LTA of the stream.
 		'''
 		if self.debug:
-			msg = '\r%s [%s] Threshold: %s; Current max STA/LTA: %.4f' % (
+			msg = '\r%s [%s] Threshold: %s; Current max STA/LTA: %.4f; STA: %.4f; LTA: %.4f' % (
 					(self.stream[0].stats.starttime + timedelta(seconds=
 					 len(self.stream[0].data) * self.stream[0].stats.delta)).strftime('%Y-%m-%d %H:%M:%S'),
 					self.sender,
 					self.thresh,
-					self.stalta
+					self.stalta,
+					self.leq_sta,
+					self.leq_lta
 					)
 			print(COLOR['current'] + COLOR['bold'] + msg + COLOR['white'], end='', flush=True)
-
-			# Further debugging prints
-			# Leq value output (only print with 20% probability):
-			if probability(0.2):
-				print("STA: ", self.leq_sta, "LTA:", self.leq_lta)
 
 
 	def run(self):
