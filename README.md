@@ -1,7 +1,7 @@
 # About this fork:
 
 - [Rsudp](https://github.com/raspishake/rsudp) extended to plot intensity and equivalent continuous sound level (Leq) 
-- ..... new alarm module... (TODO: finish readme..)
+- Added new alarm module (c_alarm_leq.py) which triggers alarm based on short-term vs long-term Leq calculation
 - Coded and tested only for RS1D / 1 channel geophone
 - Differences with upstream: [GithubCompare](https://github.com/raspishake/rsudp/compare/master...rodonile:master)
 
