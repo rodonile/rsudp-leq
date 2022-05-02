@@ -454,9 +454,6 @@ class Plot:
 
 		im = mpimg.imread(pr.resource_filename('rsudp', os.path.join('img', 'version1-01-small.png')))
 		
-		# Add EMPA logo (TODO: add variable to trigger this)
-		#im = mpimg.imread(pr.resource_filename('rsudp', os.path.join('img', 'empa_logo.png')))
-		
 		self.imax = self.fig.add_axes([0.015, 0.944, 0.2, 0.056], anchor='NW') # [left, bottom, right, top]
 		self.imax.imshow(im, aspect='equal', interpolation='sinc')
 		self.imax.axis('off')
