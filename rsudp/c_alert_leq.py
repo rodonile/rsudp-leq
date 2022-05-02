@@ -224,7 +224,7 @@ class Alert_Leq(rs.ConsumerThread):
 		'''
 		Filters the stream associated with this class.
 		'''
-		# For now we simple disable filters (we don't need them I think)
+		# For now we simple disable filters (do we need a lowpass??)
 
 		# LTA: dB and Leq
 		db_stream_lta = 20 * np.log10(np.abs(self.stream[0].data) / (1e-9))
@@ -322,7 +322,9 @@ class Alert_Leq(rs.ConsumerThread):
 
 			self._deconvolve()
 
-			if n > wait_pkts:
+			#if n > wait_pkts:
+			# For long LTA intervals, wait_pkts can't be used, compute stream duration instead:
+			if self.stream[0].stats.endtime - self.stream[0].stats.starttime >= self.lta - self.sta:  # for safety make it a little smaller
 				# if the trigger is activated
 				obstart = self.stream[0].stats.endtime - timedelta(seconds=self.lta)	# obspy time
 				self.raw = self.raw.slice(starttime=obstart)		# slice the stream to the specified length (seconds variable)
@@ -351,7 +353,9 @@ class Alert_Leq(rs.ConsumerThread):
 				printM('Leq trigger up and running normally.',
 					   self.sender)
 			else:
-				pass
+				if probability(0.05):
+					print("Current_packets: ", n)
+					print("Stream duration: ", self.stream[0].stats.endtime - self.stream[0].stats.starttime)
 
 			n += 1
 			sys.stdout.flush()
