@@ -15,7 +15,9 @@
 
 ## Instructions:
 
+- Example configuration file to be found in "configuration_file" folder
 - ... (TODO: finish readme..)
+
 
 # rsudp main README:
 
