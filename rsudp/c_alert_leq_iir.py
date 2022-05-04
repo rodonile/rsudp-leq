@@ -1,5 +1,6 @@
 import sys
-from datetime import timedelta
+from datetime import timedelta, datetime
+from dateutil import tz
 import rsudp.raspberryshake as rs
 from obspy.signal.trigger import recursive_sta_lta, trigger_onset
 from rsudp import printM, printW, printE
@@ -358,10 +359,8 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 				self.stream = self.raw.copy()
 
 			elif n == 0:
-				printM('Starting Alert_Leq trigger with sta=%ss, lta=%ss, and threshold=%s on channel=%s'
+				printM('Starting Alert_Leq_IIR trigger with sta=%ss, lta=%ss, and threshold=%s on channel=%s'
 					   % (self.sta, self.lta, self.thresh, self.cha), self.sender)
-				printM('Leq trigger warmup time of %s seconds...'
-					   % (self.lta), self.sender)
 			elif n == wait_pkts:
 				printM('Leq trigger up and running normally.',
 					   self.sender)
