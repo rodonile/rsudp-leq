@@ -8,6 +8,8 @@ This folder contains configuration files examples for this rsudp fork. Move the 
 - "station": OFFLN  --> trigger use of offline inventory file (in inventory_files folder) for deconvolution (does not attempt to download it from the server)
 
 ## "plot":
+This is the standard plotting module from rsudp extended to enable displaying of intensity(dB) as well as Leq(dB) values.
+
 - "decibel": true --> adds live intensity (dB) plot
 - "leq": true --> adds live Leq () plot, i.e. equivalent continuous sound energy
 - "db_offset": linear offset on displayed dB values (to calibrate with other geophone sensors or measurements if required)
