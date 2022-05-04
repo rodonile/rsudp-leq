@@ -136,7 +136,7 @@ class Alert_Leq(rs.ConsumerThread):
 
 
 	def __init__(self, q, sta=5, lta=30, thresh=1.6, reset=1.55, bp=False,
-				 debug=True, cha='HZ', sound=False, deconv=False, testing=False,
+				 debug=True, cha='HZ', db_offset=0, sound=False, deconv=False, testing=False,
 				 *args, **kwargs):
 		"""
 		Initializing the alert thread with parameters to set up the recursive
@@ -150,6 +150,7 @@ class Alert_Leq(rs.ConsumerThread):
 		self.queue = q
 
 		self.default_ch = 'HZ'
+		self.db_offset = db_offset
 		self.sta = sta
 		self.lta = lta
 		self.thresh = thresh

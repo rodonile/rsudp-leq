@@ -19,6 +19,7 @@ from rsudp.c_plot import Plot, MPL
 from rsudp.c_forward import Forward
 from rsudp.c_alert import Alert
 from rsudp.c_alert_leq import Alert_Leq
+from rsudp.c_alert_leq_iir import Alert_Leq_IIR
 from rsudp.c_alertsound import AlertSound
 from rsudp.c_custom import Custom
 from rsudp.c_tweet import Tweeter
@@ -261,6 +262,7 @@ def run(settings, debug):
 		reset = settings['alert_leq']['reset']
 		bp = [settings['alert_leq']['highpass'], settings['alert']['lowpass']]
 		cha = settings['alert_leq']['channel']
+		db_offset = settings['alert_leq']['db_offset']
 		if settings['alert_leq']['deconvolve']:
 			if settings['alert_leq']['units'].upper() in rs.UNITS:
 				deconv = settings['alert_leq']['units'].upper()
@@ -272,7 +274,32 @@ def run(settings, debug):
 		# set up queue and process
 		q = mk_q()
 		alrt = Alert_Leq(sta=sta, lta=lta, thresh=thresh, reset=reset, bp=bp,
-					 cha=cha, debug=debug, q=q, testing=TESTING,
+					 cha=cha, db_offset=db_offset, debug=debug, q=q, testing=TESTING,
+					 deconv=deconv)
+		mk_p(alrt)
+
+	if settings['alert_leq_iir']['enabled']:
+		sta = settings['alert_leq_iir']['sta']
+		lta = settings['alert_leq_iir']['lta']
+		a_sta = settings['alert_leq_iir']['a_sta']
+		a_lta = settings['alert_leq_iir']['a_lta']
+		thresh = settings['alert_leq_iir']['threshold']
+		reset = settings['alert_leq_iir']['reset']
+		bp = [settings['alert_leq_iir']['highpass'], settings['alert']['lowpass']]
+		cha = settings['alert_leq_iir']['channel']
+		db_offset = settings['alert_leq_iir']['db_offset']
+		if settings['alert_leq_iir']['deconvolve']:
+			if settings['alert_leq_iir']['units'].upper() in rs.UNITS:
+				deconv = settings['alert_leq_iir']['units'].upper()
+			else:
+				deconv = 'CHAN'
+		else:
+			deconv = False
+
+		# set up queue and process
+		q = mk_q()
+		alrt = Alert_Leq_IIR(sta=sta, lta=lta, a_sta=a_sta, a_lta=a_lta, thresh=thresh, reset=reset, bp=bp,
+					 cha=cha, db_offset=db_offset, debug=debug, q=q, testing=TESTING,
 					 deconv=deconv)
 		mk_p(alrt)
 

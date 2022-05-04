@@ -15,7 +15,7 @@ def probability(prob):
 COLOR['current'] = COLOR['green']
 
 
-class Alert_Leq(rs.ConsumerThread):
+class Alert_Leq_IIR(rs.ConsumerThread):
 	"""
 	A data consumer class that listens to a specific incoming data channel
 	and calculates a recursive STA/LTA (short term average over long term 
@@ -135,23 +135,28 @@ class Alert_Leq(rs.ConsumerThread):
 					% (self.filt, modifier, self.freq), self.sender)
 
 
-	def __init__(self, q, sta=5, lta=30, thresh=1.6, reset=1.55, bp=False,
-				 debug=True, cha='HZ', sound=False, deconv=False, testing=False,
+	def __init__(self, q, sta=5, lta=30, a_sta=0.9931, a_lta=0.9999, thresh=1.6, reset=1.55, bp=False,
+				 debug=True, cha='HZ', db_offset=0, sound=False, deconv=False, testing=False,
 				 *args, **kwargs):
 		"""
 		Initializing the alert thread with parameters to set up the recursive
 		STA-LTA trigger, filtering, and the channel used for listening.
 		"""
 		super().__init__()
-		self.sender = 'Alert_Leq'
+		self.sender = 'Alert_Leq_IIR'
 		self.alive = True
 		self.testing = testing
 
 		self.queue = q
 
+		self.init = False
+
 		self.default_ch = 'HZ'
+		self.db_offset = db_offset
 		self.sta = sta
 		self.lta = lta
+		self.a_sta = a_sta
+		self.a_lta = a_lta
 		self.thresh = thresh
 		self.reset = reset
 		self.debug = debug
@@ -165,8 +170,10 @@ class Alert_Leq(rs.ConsumerThread):
 		self.sps = rs.sps
 		self.inv = rs.inv
 		self.stalta = 0
-		self.leq_sta = 0
+		self.v_2_mean_lta = 0
 		self.leq_lta = 0
+		self.v_2_mean_sta = 0
+		self.leq_sta = 0
 		self.stalta_trigger_time = 0
 		self.maxstalta = 0
 		self.units = 'counts'
@@ -222,19 +229,18 @@ class Alert_Leq(rs.ConsumerThread):
 
 	def _filter(self):
 		'''
-		Filters the stream associated with this class.
+		Compute STA and LTA Leq with IIR filter
+		Hint: since UDP packets arrive every 250ms, every chunk contains 25 samples
 		'''
-		# For now don't implement any filter
+		# Here we could filter the stream with obspy (e.g. lowpass, bandpass), if required..
 
-		# LTA: dB and Leq
-		db_stream_lta = 20 * np.log10(np.abs(self.stream[0].data) / (1e-9))
-		self.leq_lta = 10 * np.log10(np.power(self.stream[0].data, 2).mean() / (1e-9)**2)
+		# LTA and STA based on IIR filter
+		self.v_2_mean_lta = self.a_lta * self.v_2_mean_lta + (1-self.a_lta) * np.power(self.stream[0].data, 2).mean()
+		self.leq_lta = 10 * np.log10(self.v_2_mean_lta / (1e-9)**2)
 
-		# STA: db and Leq
-		obstart_sta = self.stream[0].stats.endtime - timedelta(seconds=self.sta)
-		stream_sta = self.stream.slice(starttime=obstart_sta)			# slice the STA stream to the specified length (seconds variable)
-		db_stream_sta = 20 * np.log10(np.abs(stream_sta[0].data) / (1e-9))
-		self.leq_sta = 10 * np.log10(np.power(stream_sta[0].data, 2).mean() / (1e-9)**2)
+		self.v_2_mean_sta = self.a_sta * self.v_2_mean_sta + (1-self.a_sta) * np.power(self.stream[0].data, 2).mean()
+		self.leq_sta = 10 * np.log10(self.v_2_mean_sta / (1e-9)**2)
+
 		self.stalta = self.leq_sta / self.leq_lta
 		self.stalta_trigger_time = self.stream[0].stats.endtime
 
@@ -322,27 +328,34 @@ class Alert_Leq(rs.ConsumerThread):
 
 			self._deconvolve()
 
-			#if n > wait_pkts:
-			# For long LTA intervals, wait_pkts can't be used, compute stream duration instead:
-			if self.stream[0].stats.endtime - self.stream[0].stats.starttime >= self.lta - self.sta:  # for safety make it a little smaller
-				# if the trigger is activated
-				obstart = self.stream[0].stats.endtime - timedelta(seconds=self.lta)	# obspy time
-				self.raw = self.raw.slice(starttime=obstart)		# slice the stream to the specified length (seconds variable)
-				self.stream = self.stream.slice(starttime=obstart)	# slice the stream to the specified length (seconds variable)
+			if n > 3 and self.init == False:
+				# Initialize sta and lta values based on first sensor data
+				self.v_2_mean_lta = np.power(self.stream[0].data, 2).mean()
+				self.leq_lta = 10 * np.log10(self.v_2_mean_lta / (1e-9)**2)
+				self.v_2_mean_sta = np.power(self.stream[0].data, 2).mean()
+				self.leq_sta = 10 * np.log10(self.v_2_mean_sta / (1e-9)**2)
+				self.init = True 
 
-				# Debug
-				#print("Alert stream start: ", obstart)
+				# print the current STA/LTA calculation
+				self._print_stalta()
 
+				# Reset the stream
+				self.raw = rs.Stream()
+				self.stream = self.raw.copy()
+
+
+			elif n > 3 and self.init == True:		# With IIR we don't need to wait for the LTA interval for the alert module to start
 				# filter
 				self._filter()
 				# figure out if the trigger has gone off
 				self._is_trigger()
 
-				# copy the stream (necessary to avoid memory leak)
-				self.stream = rs.copy(self.stream)
-
 				# print the current STA/LTA calculation
 				self._print_stalta()
+
+				# Reset the stream
+				self.raw = rs.Stream()
+				self.stream = self.raw.copy()
 
 			elif n == 0:
 				printM('Starting Alert_Leq trigger with sta=%ss, lta=%ss, and threshold=%s on channel=%s'
@@ -353,9 +366,7 @@ class Alert_Leq(rs.ConsumerThread):
 				printM('Leq trigger up and running normally.',
 					   self.sender)
 			else:
-				if probability(0.05):
-					print("Current_packets: ", n)
-					print("Stream duration: ", self.stream[0].stats.endtime - self.stream[0].stats.starttime)
+				pass
 
 			n += 1
 			sys.stdout.flush()
