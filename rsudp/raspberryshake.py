@@ -515,7 +515,7 @@ def get_inventory(sender='get_inventory'):
 	elif 'OFFLN' in stn:
 		stn = 'R6833'
 		printW('R6833 station is not online. Importing offline inventory file.')
-		inv = read_inventory("/home/pi/github/rsudp/rsudp/inventory_files/R6833_response.xml")
+		inv = read_inventory("~/github/rsudp/rsudp/inventory_files/R6833_response.xml")
 		region = FlinnEngdahl().get_region(inv[0][0].longitude, inv[0][0].latitude)
 		printM('Inventory fetch successful. Station region is %s' % (region), sender)
 
