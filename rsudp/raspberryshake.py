@@ -100,7 +100,7 @@ def handler(signum, frame, ip=ip):
 	raise IOError('No data received')
 
 
-def initRSlib(dport=port, rsstn='Z0000', timeout=10):
+def initRSlib(dport=port, rsstn='Z0000', timeout=10, inventory_file="/home/pi/github/rsudp/rsudp/inventory_files/R6833_response.xml"):
 	'''
 	.. role:: pycode(code)
 		:language: python
@@ -168,7 +168,7 @@ def initRSlib(dport=port, rsstn='Z0000', timeout=10):
 	initd = True				# if initialization goes correctly, set initd to true
 	openSOCK()					# open a socket
 	printM('Waiting for UDP data on port %s...' % (port), sender)
-	set_params()				# get data and set parameters
+	set_params(inventory_file=inventory_file)				# get data and set parameters
 
 def openSOCK(host=''):
 	'''
@@ -199,7 +199,7 @@ def openSOCK(host=''):
 	else:
 		raise IOError("Before opening a socket, you must initialize this raspberryshake library by calling initRSlib(dport=XXXXX, rssta='R0E05') first.")
 
-def set_params():
+def set_params(inventory_file):
 	'''
 	.. role:: pycode(code)
 		:language: python
@@ -224,7 +224,7 @@ def set_params():
 	getSR(tf, data)
 	getTTLCHN()
 	printM('Available channels: %s' % chns, 'Init')
-	get_inventory()
+	get_inventory(inventory_file=inventory_file)
 
 def getDATA():
 	'''
@@ -471,7 +471,7 @@ def getTTLCHN():
 	return numchns
 
 
-def get_inventory(sender='get_inventory'):
+def get_inventory(inventory_file, sender='get_inventory'):
 	'''
 	.. role:: pycode(code)
 		:language: python
@@ -515,7 +515,7 @@ def get_inventory(sender='get_inventory'):
 	elif 'OFFLN' in stn:
 		stn = 'R6833'
 		printW('R6833 station is not online. Importing offline inventory file.')
-		inv = read_inventory("~/github/rsudp/rsudp/inventory_files/R6833_response.xml")
+		inv = read_inventory(inventory_file)
 		region = FlinnEngdahl().get_region(inv[0][0].longitude, inv[0][0].latitude)
 		printM('Inventory fetch successful. Station region is %s' % (region), sender)
 
