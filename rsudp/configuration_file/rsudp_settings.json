@@ -36,8 +36,6 @@
         "enabled": true,
         "channel": "HZ",
         "db_offset": 0,
-        "sta": 1,
-        "lta": 3600,
         "a_sta": 0.91,
         "a_lta": 0.99999,
         "threshold": 1.1,

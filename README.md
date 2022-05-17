@@ -25,7 +25,7 @@ The script should take care of the installation automatically. In case you encou
     conda activate rsudp
     rs-client
 
-The program assumes the configuration file is located in the *~/.config/rsudp/rsudp_settings.json*, which should be the case if rsudp was installed with the setup script. Alternatively you can run the program specifying the location of the configuration file:
+The program assumes the configuration file is located at *~/.config/rsudp/rsudp_settings.json*, which should be the case if rsudp was installed with the setup script. Alternatively you can run the program specifying the location of the configuration file:
 
     rs-client -d /path/to/config/file
 

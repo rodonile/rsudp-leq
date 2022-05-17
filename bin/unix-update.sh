@@ -113,22 +113,26 @@ fi
 if [ ! -z ${success+x} ]; then
   echo "rsudp has installed successfully!"
   # Uncomment here if you want the update script to gather a new config file each time...
-  #if [ -f $settings ]; then
-  #  echo "Backing up old settings file..."
-  #  if [ ! -z ${gnu+x} ]; then
-  #    cp --backup=t --force $settings $settings
-  #  else
-  #    cp $settings $settings".old"
-  #  fi
-  #fi
-  #echo "Installing new settings file..."
-  #mkdir -p $config &&
-  #rs-client -i &&      # secret install mode
-  #sed -i 's/@@DIR@@/'"$(echo $outdir | sed 's_/_\\/_g')"'/g' $settings &&
-  #echo "Success." ||
-  #echo "Failed to create settings file. Either the script could not create a folder at $config, or dumping the settings did not work." ||
-  #echo "If you would like, you can dump the settings to a file manually by running the command" ||
-  #echo "rs-client -d rsudp_settings.json"
+  if [ -f $settings ]; then
+    echo "Backing up old settings file..."
+    if [ ! -z ${gnu+x} ]; then
+      cp --backup=t --force $settings $settings
+    else
+      cp $settings $settings".old"
+    fi
+  fi
+  echo "Installing new settings file..."
+  mkdir -p $config &&
+  rs-client -i &&      # secret install mode
+  sed -i 's/@@DIR@@/'"$(echo $outdir | sed 's_/_\\/_g')"'/g' $settings &&
+  echo "Success." ||
+  echo "Failed to create settings file. Either the script could not create a folder at $config, or dumping the settings did not work." ||
+  echo "If you would like, you can dump the settings to a file manually by running the command" ||
+  echo "rs-client -d rsudp_settings.json"
+
+  # Replace with custom config file
+  echo "Replacing config file with customized configs (fork-specific)"
+  cp rsudp/configuration_file/rsudp_settings.json $settings
 
   if [ -z ${previous_conda+x} ]; then
     if [ -z ${sourced+x} ]; then
