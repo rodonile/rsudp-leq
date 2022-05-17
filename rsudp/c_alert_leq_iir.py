@@ -136,7 +136,7 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 					% (self.filt, modifier, self.freq), self.sender)
 
 
-	def __init__(self, q, sta=5, lta=30, a_sta=0.9931, a_lta=0.9999, thresh=1.6, reset=1.55, bp=False,
+	def __init__(self, q, a_sta=0.9931, a_lta=0.9999, thresh=1.6, reset=1.55, bp=False,
 				 debug=True, cha='HZ', db_offset=0, sound=False, deconv=False, testing=False,
 				 *args, **kwargs):
 		"""
@@ -154,8 +154,6 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 
 		self.default_ch = 'HZ'
 		self.db_offset = db_offset
-		self.sta = sta
-		self.lta = lta
 		self.a_sta = a_sta
 		self.a_lta = a_lta
 		self.thresh = thresh
@@ -313,9 +311,6 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 		"""
 		n = 0
 
-		wait_pkts = (self.lta) / (rs.tf / 1000)
-		#print("Wait_pkts: ", wait_pkts)
-
 		while n > 3:
 			self.getq()
 			n += 1
@@ -359,9 +354,9 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 				self.stream = self.raw.copy()
 
 			elif n == 0:
-				printM('Starting Alert_Leq_IIR trigger with sta=%ss, lta=%ss, and threshold=%s on channel=%s'
-					   % (self.sta, self.lta, self.thresh, self.cha), self.sender)
-			elif n == wait_pkts:
+				printM('Starting Alert_Leq_IIR trigger with a_sta=%s, a_lta=%s, and threshold=%s on channel=%s'
+					   % (self.a_sta, self.a_lta, self.thresh, self.cha), self.sender)
+			elif n == 3:
 				printM('Leq trigger up and running normally.',
 					   self.sender)
 			else:

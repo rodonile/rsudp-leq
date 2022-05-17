@@ -280,8 +280,6 @@ def run(settings, debug):
 		mk_p(alrt)
 
 	if settings['alert_leq_iir']['enabled']:
-		sta = settings['alert_leq_iir']['sta']
-		lta = settings['alert_leq_iir']['lta']
 		a_sta = settings['alert_leq_iir']['a_sta']
 		a_lta = settings['alert_leq_iir']['a_lta']
 		thresh = settings['alert_leq_iir']['threshold']
@@ -299,7 +297,7 @@ def run(settings, debug):
 
 		# set up queue and process
 		q = mk_q()
-		alrt = Alert_Leq_IIR(sta=sta, lta=lta, a_sta=a_sta, a_lta=a_lta, thresh=thresh, reset=reset, bp=bp,
+		alrt = Alert_Leq_IIR(a_sta=a_sta, a_lta=a_lta, thresh=thresh, reset=reset, bp=bp,
 					 cha=cha, db_offset=db_offset, debug=debug, q=q, testing=TESTING,
 					 deconv=deconv)
 		mk_p(alrt)

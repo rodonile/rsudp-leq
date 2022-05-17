@@ -13,10 +13,25 @@
 ![GUI](docs/_images/rsudp_gui_rodonile.png)
 
 
-## Instructions:
+## Installation instruction
 
-- Example configuration file to be found in "configuration_file" folder
-- ... (TODO: finish readme..)
+    cd rsudp
+    bash unix-install-rsudp.sh
+
+The script should take care of the installation automatically. In case you encounter any errors, try to manually [install miniconda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/linux.html) before re-running the script. 
+
+## How to start the program
+
+    conda activate rsudp
+    rs-client
+
+The program assumes the configuration file is located in the *~/.config/rsudp/rsudp_settings.json*, which should be the case if rsudp was installed with the setup script. Alternatively you can run the program specifying the location of the configuration file:
+
+    rs-client -d /path/to/config/file
+
+## Configuration parameters
+
+An explanation of the most important parameters in the *rsudp_settings.json* file is available in the [configuration_file](rsudp/configuration_file) folder.  
 
 
 # rsudp main README:
