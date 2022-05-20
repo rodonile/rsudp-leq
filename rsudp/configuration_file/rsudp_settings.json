@@ -43,6 +43,7 @@
         "highpass": 0,
         "lowpass": 50,
         "deconvolve": true,
+        "manual_scaling": true,
         "units": "VEL"},
     "forward": {
         "enabled": false,

@@ -137,8 +137,8 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 
 
 	def __init__(self, q, a_sta=0.9931, a_lta=0.9999, thresh=1.6, reset=1.55, bp=False,
-				 debug=True, cha='HZ', db_offset=0, sound=False, deconv=False, testing=False,
-				 *args, **kwargs):
+				 debug=True, cha='HZ', db_offset=0, sound=False, deconv=False, manual_scaling=False,
+				 testing=False, *args, **kwargs):
 		"""
 		Initializing the alert thread with parameters to set up the recursive
 		STA-LTA trigger, filtering, and the channel used for listening.
@@ -163,6 +163,7 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 		self.kwargs = kwargs
 		self.raw = rs.Stream()
 		self.stream = rs.Stream()
+		self.temp_stream = np.zeros((0,0))
 
 		self._set_channel(cha)
 
@@ -178,6 +179,7 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 		self.units = 'counts'
 		
 		self._set_deconv(deconv)
+		self.manual_scaling = manual_scaling
 
 		self.exceed = False
 		self.sound = sound
@@ -210,8 +212,9 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 		'''
 		Deconvolves the stream associated with this class.
 		'''
-		if self.deconv:
+		if self.deconv and self.manual_scaling == False:
 			helpers.deconvolve(self)
+
 
 
 	def _subloop(self):
@@ -234,10 +237,10 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 		# Here we could filter the stream with obspy (e.g. lowpass, bandpass), if required..
 
 		# LTA and STA based on IIR filter
-		self.v_2_mean_lta = self.a_lta * self.v_2_mean_lta + (1-self.a_lta) * np.power(self.stream[0].data, 2).mean()
+		self.v_2_mean_lta = self.a_lta * self.v_2_mean_lta + (1-self.a_lta) * np.power(self.temp_stream, 2).mean()
 		self.leq_lta = 10 * np.log10(self.v_2_mean_lta / (1e-9)**2)
 
-		self.v_2_mean_sta = self.a_sta * self.v_2_mean_sta + (1-self.a_sta) * np.power(self.stream[0].data, 2).mean()
+		self.v_2_mean_sta = self.a_sta * self.v_2_mean_sta + (1-self.a_sta) * np.power(self.temp_stream, 2).mean()
 		self.leq_sta = 10 * np.log10(self.v_2_mean_sta / (1e-9)**2)
 
 		self.stalta = self.leq_sta / self.leq_lta
@@ -322,13 +325,18 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 			self.raw = rs.copy(self.raw)	# necessary to avoid memory leak
 			self.stream = self.raw.copy()
 
-			self._deconvolve()
+			self._deconvolve() # doesn't do anything if self.manual_scaling is set to true
+			if self.manual_scaling:
+				self.temp_stream = self.stream[0].data / 300000000
+			else:
+				self.temp_stream = self.stream[0].data
+
 
 			if n > 3 and self.init == False:
 				# Initialize sta and lta values based on first sensor data
-				self.v_2_mean_lta = np.power(self.stream[0].data, 2).mean()
+				self.v_2_mean_lta = np.power(self.temp_stream, 2).mean()
 				self.leq_lta = 10 * np.log10(self.v_2_mean_lta / (1e-9)**2)
-				self.v_2_mean_sta = np.power(self.stream[0].data, 2).mean()
+				self.v_2_mean_sta = np.power(self.temp_stream, 2).mean()
 				self.leq_sta = 10 * np.log10(self.v_2_mean_sta / (1e-9)**2)
 				self.init = True 
 
