@@ -163,7 +163,7 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 		self.kwargs = kwargs
 		self.raw = rs.Stream()
 		self.stream = rs.Stream()
-		self.temp_stream = np.zeros((0,0))
+		self.stream_data = np.zeros((0,0))
 
 		self._set_channel(cha)
 
@@ -213,7 +213,7 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 		'''
 		Deconvolves the stream associated with this class.
 		'''
-		if self.deconv and self.manual_scaling == False:
+		if self.deconv:
 			helpers.deconvolve(self)
 
 
@@ -238,10 +238,10 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 		# Here we could filter the stream with obspy (e.g. lowpass, bandpass), if required..
 
 		# LTA and STA based on IIR filter
-		self.v_2_mean_lta = self.a_lta * self.v_2_mean_lta + (1-self.a_lta) * np.power(self.temp_stream, 2).mean()
+		self.v_2_mean_lta = self.a_lta * self.v_2_mean_lta + (1-self.a_lta) * np.power(self.stream_data, 2).mean()
 		self.leq_lta = 10 * np.log10(self.v_2_mean_lta / (1e-9)**2)
 
-		self.v_2_mean_sta = self.a_sta * self.v_2_mean_sta + (1-self.a_sta) * np.power(self.temp_stream, 2).mean()
+		self.v_2_mean_sta = self.a_sta * self.v_2_mean_sta + (1-self.a_sta) * np.power(self.stream_data, 2).mean()
 		self.leq_sta = 10 * np.log10(self.v_2_mean_sta / (1e-9)**2)
 
 		self.stalta = self.leq_sta / self.leq_lta
@@ -326,19 +326,22 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 			self.raw = rs.copy(self.raw)	# necessary to avoid memory leak
 			self.stream = self.raw.copy()
 
-			self._deconvolve() # This function doesn't do anything if self.manual_scaling is set to true
+			self._deconvolve()
 
 			if self.manual_scaling:
-				self.temp_stream = self.stream[0].data / self.sensitivity
+				# Manually perform the scaling instead of using the deconvolution function
+				mean = int(round(np.mean(self.raw[0].data)))
+				self.stream_data = (self.raw[0].data - mean) / self.sensitivity
 			else:
-				self.temp_stream = self.stream[0].data
+				mean = int(round(np.mean(self.stream[0].data)))
+				self.stream_data = self.stream[0].data - mean
 
 
 			if n > 3 and self.init == False:
 				# Initialize sta and lta values based on first sensor data
-				self.v_2_mean_lta = np.power(self.temp_stream, 2).mean()
+				self.v_2_mean_lta = np.power(self.stream_data, 2).mean()
 				self.leq_lta = 10 * np.log10(self.v_2_mean_lta / (1e-9)**2)
-				self.v_2_mean_sta = np.power(self.temp_stream, 2).mean()
+				self.v_2_mean_sta = np.power(self.stream_data, 2).mean()
 				self.leq_sta = 10 * np.log10(self.v_2_mean_sta / (1e-9)**2)
 				self.init = True 
 

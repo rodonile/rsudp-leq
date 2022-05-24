@@ -115,8 +115,8 @@ class Plot:
 	def __init__(self, q, cha='all',
 				 seconds=30, spectrogram=True,
 				 fullscreen=False, kiosk=False,
-				 deconv=False, screencap=False,
-				 alert=True, testing=False, decibel=False, leq=False):
+				 deconv=False, manual_scaling=False, sensitivity=399650000, screencap=False,
+				 alert=True, testing=False, decibel=False, voltage=False):
 		"""
 		Initialize the plot process.
 
@@ -153,9 +153,12 @@ class Plot:
 
 		# Trigger parameters for showing also dB and Leq as plots
 		self.decibel = decibel
-		self.leq = leq
+		self.voltage = voltage
 
 		self._set_deconv(deconv)
+		# Manual scaling (used instead of obspy deconvolution)
+		self.manual_scaling = manual_scaling
+		self.sensitivity = sensitivity
 
 		self.per_lap = 0.9
 		self.fullscreen = fullscreen
@@ -356,13 +359,13 @@ class Plot:
 			self.nlap1 = self.nfft1 * self.per_lap
 
 		# Additional plots for dB and Leq
-		if self.spectrogram and (self.decibel ^ self.leq):
+		if self.spectrogram and (self.decibel ^ self.voltage):
 			self.mult = 3
-		elif self.spectrogram and self.decibel and self.leq:
+		elif self.spectrogram and self.decibel and self.voltage:
 			self.mult = 4
-		elif not self.spectrogram and (self.decibel ^ self.leq):
+		elif not self.spectrogram and (self.decibel ^ self.voltage):
 			self.mult = 2
-		elif not self.spectrogram and self.decibel and self.leq:
+		elif not self.spectrogram and self.decibel and self.voltage:
 			self.mult = 3
 
 	def _init_axes(self, i):
@@ -391,15 +394,15 @@ class Plot:
 					plot_number = 2
 
 				self.ax.append(self.fig.add_subplot(self.num_chans*self.mult,
-								1, plot_number, label=str(plot_number)))#, sharex=ax[0]))
+								1, plot_number, label=str(plot_number)))
 				self.ax[plot_number - 1].set_facecolor(self.bgcolor)
 				self.ax[plot_number - 1].tick_params(colors=self.fgcolor, labelcolor=self.fgcolor)
 
-			# Add leq plot
-			if self.leq:
-				plot_number = self.mult 	# leq alway added as last plot
+			# Add voltage plot
+			if self.voltage:
+				plot_number = self.mult 	# voltage alway added as last plot
 				self.ax.append(self.fig.add_subplot(self.num_chans*self.mult,
-								1, plot_number, label=str(plot_number)))#, sharex=ax[0]))
+								1, plot_number, label=str(plot_number)))
 				self.ax[plot_number - 1].set_facecolor(self.bgcolor)
 				self.ax[plot_number - 1].tick_params(colors=self.fgcolor, labelcolor=self.fgcolor)
 
@@ -526,10 +529,10 @@ class Plot:
 				self.ax[plot_number - 1].yaxis.set_major_formatter(EngFormatter(unit="dB"))
 				
 			####################################################
-			# Plot standalone Leq
+			# Plot Voltage
 			####################################################
-			if self.leq:
-				plot_number = self.mult		# leq alway added as last plot
+			if self.voltage:
+				plot_number = self.mult		# voltage alway added as last plot
 				
 				r = np.arange(start, end, np.timedelta64(int(1000/self.sps), 'ms'))[-len(
 						  self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]):]
@@ -549,7 +552,7 @@ class Plot:
 				ylabel = self.stream[i].stats.units.strip().capitalize() if (' ' in self.stream[i].stats.units) else self.stream[i].stats.units
 				self.ax[plot_number - 1].set_ylabel(ylabel, color=self.fgcolor)
 				self.ax[plot_number - 1].legend(loc='upper left')	# legend and location
-				self.ax[plot_number - 1].set_ylabel('Leq', color=self.fgcolor)
+				self.ax[plot_number - 1].set_ylabel('Voltage', color=self.fgcolor)
 				self.ax[plot_number - 1].yaxis.set_major_formatter(EngFormatter(unit="dB"))
 
 
@@ -619,7 +622,7 @@ class Plot:
 				self.ax[i*self.mult].yaxis.set_major_formatter(EngFormatter(unit='%s' % unit.lower()))
 
 
-	def _draw_lines(self, i, start, end, mean):
+	def _draw_lines(self, i, start, end, mean, mean_raw):
 		'''
 		Updates the line data in the plot.
 
@@ -631,14 +634,26 @@ class Plot:
 		comp = 1/self.per_lap	# spectrogram offset compensation factor
 		r = np.arange(start, end, np.timedelta64(int(1000/self.sps), 'ms'))[-len(
 					self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]):]
-		self.lines[i].set_ydata(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]-mean)
-		self.lines[i].set_xdata(r)	# (1/self.per_lap)/2
-		self.ax[i*self.mult].set_xlim(left=start.astype(datetime)+timedelta(seconds=comp*1.5),
-										right=end.astype(datetime))
-		self.ax[i*self.mult].set_ylim(bottom=np.min(self.stream[i].data-mean)
-										-np.ptp(self.stream[i].data-mean)*0.1,
-										top=np.max(self.stream[i].data-mean)
-										+np.ptp(self.stream[i].data-mean)*0.1)
+
+		if self.manual_scaling == False:
+			self.lines[i].set_ydata(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]-mean)
+			self.lines[i].set_xdata(r)	# (1/self.per_lap)/2
+			self.ax[i*self.mult].set_xlim(left=start.astype(datetime)+timedelta(seconds=comp*1.5),
+											right=end.astype(datetime))
+			self.ax[i*self.mult].set_ylim(bottom=np.min(self.stream[i].data-mean)
+											-np.ptp(self.stream[i].data-mean)*0.1,
+											top=np.max(self.stream[i].data-mean)
+											+np.ptp(self.stream[i].data-mean)*0.1)
+		else: 
+			# Manual_scaling enabled: scale with static sensitivity parameter instead of using obspy deconvolution function
+			self.lines[i].set_ydata((self.raw[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]-mean_raw)/self.sensitivity)
+			self.lines[i].set_xdata(r)	# (1/self.per_lap)/2
+			self.ax[i*self.mult].set_xlim(left=start.astype(datetime)+timedelta(seconds=comp*1.5),
+											right=end.astype(datetime))
+			self.ax[i*self.mult].set_ylim(bottom=np.min((self.raw[i].data-mean_raw)/self.sensitivity)
+											-np.ptp((self.raw[i].data-mean_raw)/self.sensitivity)*0.1,
+											top=np.max((self.raw[i].data-mean_raw)/self.sensitivity)
+											+np.ptp((self.raw[i].data-mean_raw)/self.sensitivity)*0.1)
 
 
 	def _update_specgram(self, i, mean):
@@ -671,7 +686,7 @@ class Plot:
 		self.ax[i*self.mult+1].set_xlabel('Time (UTC)', color=self.fgcolor)
 
 
-	def _update_decibel(self, i, start, end, mean):
+	def _update_decibel(self, i, start, end, mean, mean_raw):
 		'''
 		Updates the decibel plot with new data.
 		:param int i: the trace number
@@ -689,54 +704,61 @@ class Plot:
 		r = np.arange(start, end, np.timedelta64(int(1000/self.sps), 'ms'))[-len(
 					self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]):]
 
-		# Plot dB
-		self.lines[line_number].set_ydata(20 * np.log10(np.abs(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean) / (1e-9)))
-		self.lines[line_number].set_xdata(r)
-		
-		# Plot Leq
-		r_ones = np.ones(r.shape)
-		# Stream split in 10s chunks (if self.seconds > 10) for displaying STA Leq
-		splitting = False	# Need to debug, not working. For now disable
-		if splitting and self.seconds > 10:
-			n_splits = self.seconds / 10
-			#r_split = np.split(r, n_splits)
-			r_ones_split = np.split(r_ones, n_splits)
-			leq = []
-			for spl_nr in range(0, n_splits):
-				np.concatenate(leq, r_ones_split[spl_nr] * 10 * np.log10(np.power(self.stream[i]
-										.data[int(-self.sps*((self.seconds - spl_nr*10)-(comp/2))):int(-self.sps*((self.seconds - (spl_nr+1)*10)-(comp/2)))] - mean, 2)
-										.mean() / (1e-9)**2))
+		if self.manual_scaling == False:
+			# Plot dB
+			self.lines[line_number].set_ydata(20 * np.log10(np.abs(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean) / (1e-9)))
+			self.lines[line_number].set_xdata(r)
+
+			# Plot Leq
+			r_ones = np.ones(r.shape)
+			leq = r_ones * 10 * np.log10(np.power(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean, 2).mean() / (1e-9)**2)
+
+			self.lines[line_number + 1].set_ydata(leq)
+			self.lines[line_number + 1].set_xdata(r)
+
+			self.ax[plot_number - 1].set_xlim(left=start.astype(datetime)+timedelta(seconds=comp*1.5),
+											  right=end.astype(datetime))
+			self.ax[plot_number - 1].set_ylim(bottom=0,
+											  top=20 * np.log10(np.abs(np.max(self.stream[i].data-mean)) / (1e-9)) + 0.1 * 20 * np.log10(np.abs(np.ptp(self.stream[i].data-mean)) / (1e-9)) )
+
+		# Scale with static sensitivity (from V-counts to m/s) instead of using obspy deconvolution function
 		else:
-			leq = r_ones * 10 * np.log10(np.power(self.stream[i]
-											.data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean, 2).mean() / (1e-9)**2)
+			# Plot dB
+			self.lines[line_number].set_ydata(
+				20 * np.log10(np.abs((self.raw[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean_raw) / self.sensitivity) / (1e-9)))
+			self.lines[line_number].set_xdata(r)
 
-		self.lines[line_number + 1].set_ydata(leq)
-		self.lines[line_number + 1].set_xdata(r)
-		
-		self.ax[plot_number - 1].set_xlim(left=start.astype(datetime)+timedelta(seconds=comp*1.5),
-										  right=end.astype(datetime))
-		self.ax[plot_number - 1].set_ylim(bottom=0,
-										  top=20 * np.log10(np.abs(np.max(self.stream[i].data-mean)) / (1e-9)) + 0.1 * 20 * np.log10(np.abs(np.ptp(self.stream[i].data-mean)) / (1e-9)) )
+			# Plot Leq
+			r_ones = np.ones(r.shape)
+			leq = r_ones * 10 * np.log10(
+				np.power((self.raw[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean_raw) / self.sensitivity, 2).mean() / (1e-9)**2)
 
-		# Uncomment to disable axes on decibel plot and set Time(UTC) as xlabel instead
-		#self.ax[plot_number - 1].tick_params(axis='x', which='both',
-		#		bottom=False, top=False, labelbottom=False)
-		#self.ax[plot_number - 1].set_xlabel('Time (UTC)', color=self.fgcolor)
+			self.lines[line_number + 1].set_ydata(leq)
+			self.lines[line_number + 1].set_xdata(r)
+
+			self.ax[plot_number - 1].set_xlim(left=start.astype(datetime)+timedelta(seconds=comp*1.5),
+											  right=end.astype(datetime))
+			self.ax[plot_number - 1].set_ylim(bottom=0,
+											  top=20 * np.log10(np.abs(np.max((self.raw[i].data-mean_raw)/self.sensitivity)) / (1e-9)) 
+											  + 0.1 * 20 * np.log10(np.abs(np.ptp((self.raw[i].data-mean_raw)/self.sensitivity)) / (1e-9)) )
+
+
+		# General parameters
 		self.ax[plot_number - 1].set_ylabel('Intensity', color=self.fgcolor)
-
-		if self.deconv:
-			unit = "dB"
-			self.ax[plot_number - 1].yaxis.set_major_formatter(EngFormatter(unit=unit))
+		unit = "dB"
+		self.ax[plot_number - 1].yaxis.set_major_formatter(EngFormatter(unit=unit))
 
 
-	def _update_leq(self, i, start, end, mean):
+	def _update_voltage(self, i, start, end, mean, mean_raw):
+		# TODO: change this function / set it as a debug/additional plot (cause leq is already plotted in the dB plot) to plot V_counts
+		# TODO: evtl sarebbe bello plottare i mV (calcolare conversione V-count to mV con dati matlab!!!!)
 		'''
-		Updates the decibel plot with new data.
+		Updates the V-count plot with new data.
 		:param int i: the trace number
 		:param float mean: the mean of data in the trace
 		'''
 
-		plot_number = self.mult		# leq is always last plot if present
+		plot_number = self.mult		# Voltage is always last plot if present
 		# Spectrogram doesn't use self.lines, but intensity/dB plot uses 2 lines
 		if self.decibel:
 			line_number = 3
@@ -744,30 +766,20 @@ class Plot:
 			line_number = 2	
 
 		comp = 1/self.per_lap
-		r = np.arange(start, end, np.timedelta64(int(1000/self.sps), 'ms'))[-len(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]):]
-		r_ones = np.ones(r.shape)
-		#self.lines[line_number].set_ydata(r_ones * 10 * np.log10(np.power(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean, 2).mean() / (1e-9)**2))
-		# Temporarily plot velocity (calculated from V_counts)
-		self.lines[line_number].set_ydata( (self.raw[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]-mean) / 280000000 )
-		
-		self.lines[line_number].set_xdata(r)	# (1/self.per_lap)/2
+		r = np.arange(start, end, np.timedelta64(int(1000/self.sps), 'ms'))[-len(self.raw[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]):]
+
+		self.lines[line_number].set_ydata(self.raw[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]-mean_raw)
+		self.lines[line_number].set_xdata(r)
+
 		self.ax[plot_number - 1].set_xlim(left=start.astype(datetime)+timedelta(seconds=comp*1.5),
-										  right=end.astype(datetime))
-		#self.ax[plot_number - 1].set_ylim(bottom=0,
-		#								  top=20 * np.log10(np.abs(np.max(self.stream[i].data-mean)) / (1e-9)) + 0.1 * 20 * np.log10(np.abs(np.ptp(self.stream[i].data-mean)) / (1e-9)) )
-		self.ax[plot_number - 1].set_ylim(bottom=np.min((self.raw[i].data-mean) / 280000000)
-										-np.ptp((self.raw[i].data-mean) / 280000000)*0.1,
-										top=np.max((self.raw[i].data-mean) / 280000000)
-										+np.ptp((self.raw[i].data-mean) / 280000000)*0.1)
+											right=end.astype(datetime))
+		self.ax[plot_number - 1].set_ylim(bottom=np.min(self.raw[i].data-mean_raw)
+											-np.ptp(self.raw[i].data-mean_raw)*0.1,
+											top=np.max(self.raw[i].data-mean_raw)
+											+np.ptp(self.raw[i].data-mean_raw)*0.1)
 
-
-		# Uncomment to disable axes on leq plot and set Time(UTC) as xlabel instead
-		#self.ax[plot_number - 1].tick_params(axis='x', which='both',
-		#		bottom=False, top=False, labelbottom=False)
-		#self.ax[plot_number - 1].set_xlabel('Time (UTC)', color=self.fgcolor)
-		self.ax[plot_number - 1].set_ylabel('Leq', color=self.fgcolor)
-		#unit = "dB"
-		unit = rs.UNITS['VEL'][1]
+		self.ax[plot_number - 1].set_ylabel('Voltage [A/D counts]', color=self.fgcolor)
+		unit = "counts"
 		self.ax[plot_number - 1].yaxis.set_major_formatter(EngFormatter(unit=unit))
 
 	def update_plot(self):
@@ -786,22 +798,20 @@ class Plot:
 		i = 0
 		for i in range(self.num_chans):	# for each channel, update the plots
 			mean = int(round(np.mean(self.stream[i].data)))
+			mean_raw = int(round(np.mean(self.raw[i].data)))
 			# DEBUG
-			if mean != 0:
-				print(mean)
-			self._draw_lines(i, start, end, mean)
+			#if mean != 0:
+			#	print(mean)
+			self._draw_lines(i, start, end, mean, mean_raw)
 			self._set_ch_specific_label(i)
 			if self.spectrogram:
 				self._update_specgram(i, mean)
-			#else:
-				# also can't be in the setup function
-			#	self.ax[i*self.mult].set_xlabel('Time (UTC)', color=self.fgcolor)
 			
 			if self.decibel:
-				self._update_decibel(i, start, end, mean)
+				self._update_decibel(i, start, end, mean, mean_raw)
 			
-			if self.leq:
-				self._update_leq(i, start, end, mean)
+			if self.voltage:
+				self._update_voltage(i, start, end, mean, mean_raw)
 
 
 	def figloop(self):
