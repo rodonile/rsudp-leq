@@ -728,9 +728,6 @@ class Plot:
 			unit = "dB"
 			self.ax[plot_number - 1].yaxis.set_major_formatter(EngFormatter(unit=unit))
 
-		# Leq value output (only print with 20% probability):
-		#if probability(0.2):
-		#	print("Leq:", 10 * np.log10(np.power(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean, 2).mean() / (1e-9)**2))
 
 	def _update_leq(self, i, start, end, mean):
 		'''
@@ -749,22 +746,29 @@ class Plot:
 		comp = 1/self.per_lap
 		r = np.arange(start, end, np.timedelta64(int(1000/self.sps), 'ms'))[-len(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]):]
 		r_ones = np.ones(r.shape)
-		self.lines[line_number].set_ydata(r_ones * 10 * np.log10(np.power(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean, 2).mean() / (1e-9)**2))
+		#self.lines[line_number].set_ydata(r_ones * 10 * np.log10(np.power(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean, 2).mean() / (1e-9)**2))
+		# Temporarily plot velocity (calculated from V_counts)
+		self.lines[line_number].set_ydata( (self.raw[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]-mean) / 280000000 )
+		
 		self.lines[line_number].set_xdata(r)	# (1/self.per_lap)/2
 		self.ax[plot_number - 1].set_xlim(left=start.astype(datetime)+timedelta(seconds=comp*1.5),
 										  right=end.astype(datetime))
-		self.ax[plot_number - 1].set_ylim(bottom=0,
-										  top=20 * np.log10(np.abs(np.max(self.stream[i].data-mean)) / (1e-9)) + 0.1 * 20 * np.log10(np.abs(np.ptp(self.stream[i].data-mean)) / (1e-9)) )
+		#self.ax[plot_number - 1].set_ylim(bottom=0,
+		#								  top=20 * np.log10(np.abs(np.max(self.stream[i].data-mean)) / (1e-9)) + 0.1 * 20 * np.log10(np.abs(np.ptp(self.stream[i].data-mean)) / (1e-9)) )
+		self.ax[plot_number - 1].set_ylim(bottom=np.min((self.raw[i].data-mean) / 280000000)
+										-np.ptp((self.raw[i].data-mean) / 280000000)*0.1,
+										top=np.max((self.raw[i].data-mean) / 280000000)
+										+np.ptp((self.raw[i].data-mean) / 280000000)*0.1)
+
 
 		# Uncomment to disable axes on leq plot and set Time(UTC) as xlabel instead
 		#self.ax[plot_number - 1].tick_params(axis='x', which='both',
 		#		bottom=False, top=False, labelbottom=False)
 		#self.ax[plot_number - 1].set_xlabel('Time (UTC)', color=self.fgcolor)
 		self.ax[plot_number - 1].set_ylabel('Leq', color=self.fgcolor)
-
-		if self.deconv:
-			unit = "dB"
-			self.ax[plot_number - 1].yaxis.set_major_formatter(EngFormatter(unit=unit))
+		#unit = "dB"
+		unit = rs.UNITS['VEL'][1]
+		self.ax[plot_number - 1].yaxis.set_major_formatter(EngFormatter(unit=unit))
 
 	def update_plot(self):
 		'''

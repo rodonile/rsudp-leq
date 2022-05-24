@@ -295,12 +295,13 @@ def run(settings, debug):
 		else:
 			deconv = False
 		manual_scaling = settings['alert_leq_iir']['manual_scaling']
+		sensitivity = settings['alert_leq_iir']['sensitivity']
 
 		# set up queue and process
 		q = mk_q()
 		alrt = Alert_Leq_IIR(a_sta=a_sta, a_lta=a_lta, thresh=thresh, reset=reset, bp=bp,
 					 cha=cha, db_offset=db_offset, debug=debug, q=q, testing=TESTING,
-					 deconv=deconv, manual_scaling=manual_scaling)
+					 deconv=deconv, manual_scaling=manual_scaling, sensitivity=sensitivity)
 		mk_p(alrt)
 
 	if settings['alertsound']['enabled']:

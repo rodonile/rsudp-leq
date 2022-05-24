@@ -43,8 +43,9 @@
         "highpass": 0,
         "lowpass": 50,
         "deconvolve": true,
+        "units": "VEL",
         "manual_scaling": true,
-        "units": "VEL"},
+        "sensitivity": 280000000},
     "forward": {
         "enabled": false,
         "address": ["192.168.1.254"],

@@ -136,9 +136,9 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 					% (self.filt, modifier, self.freq), self.sender)
 
 
-	def __init__(self, q, a_sta=0.9931, a_lta=0.9999, thresh=1.6, reset=1.55, bp=False,
+	def __init__(self, q, a_sta=0.9931, a_lta=0.9999, thresh=1.1, reset=1.1, bp=False,
 				 debug=True, cha='HZ', db_offset=0, sound=False, deconv=False, manual_scaling=False,
-				 testing=False, *args, **kwargs):
+				 sensitivity=399650000, testing=False, *args, **kwargs):
 		"""
 		Initializing the alert thread with parameters to set up the recursive
 		STA-LTA trigger, filtering, and the channel used for listening.
@@ -180,6 +180,7 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 		
 		self._set_deconv(deconv)
 		self.manual_scaling = manual_scaling
+		self.sensitivity = sensitivity
 
 		self.exceed = False
 		self.sound = sound
@@ -325,9 +326,10 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 			self.raw = rs.copy(self.raw)	# necessary to avoid memory leak
 			self.stream = self.raw.copy()
 
-			self._deconvolve() # doesn't do anything if self.manual_scaling is set to true
+			self._deconvolve() # This function doesn't do anything if self.manual_scaling is set to true
+
 			if self.manual_scaling:
-				self.temp_stream = self.stream[0].data / 300000000
+				self.temp_stream = self.stream[0].data / self.sensitivity
 			else:
 				self.temp_stream = self.stream[0].data
 
