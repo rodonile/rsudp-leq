@@ -724,9 +724,14 @@ class Plot:
 		# Scale with static sensitivity (from V-counts to m/s) instead of using obspy deconvolution function
 		else:
 			# Plot dB
-			self.lines[line_number].set_ydata(
-				20 * np.log10(np.abs((self.raw[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean_raw) / self.sensitivity) / (1e-9)))
+			temp_raw_data = self.raw[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean_raw
+			# Fill lower thresh. values with 0dB value to avoid np.log10 error
+			#temp_raw_data[temp_raw_data < 1e-9 * self.sensitivity] = 1e-9 * self.sensitivity 
+			# Still gives error even after removing zeros, for now disable warnings for this log10
+			np.seterr(divide = 'ignore') 
+			self.lines[line_number].set_ydata(20 * np.log10(np.abs((temp_raw_data) / self.sensitivity) / (1e-9)))
 			self.lines[line_number].set_xdata(r)
+			np.seterr(divide = 'warn') 
 
 			# Plot Leq
 			r_ones = np.ones(r.shape)
@@ -750,8 +755,6 @@ class Plot:
 
 
 	def _update_voltage(self, i, start, end, mean, mean_raw):
-		# TODO: change this function / set it as a debug/additional plot (cause leq is already plotted in the dB plot) to plot V_counts
-		# TODO: evtl sarebbe bello plottare i mV (calcolare conversione V-count to mV con dati matlab!!!!)
 		'''
 		Updates the V-count plot with new data.
 		:param int i: the trace number
@@ -768,18 +771,19 @@ class Plot:
 		comp = 1/self.per_lap
 		r = np.arange(start, end, np.timedelta64(int(1000/self.sps), 'ms'))[-len(self.raw[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]):]
 
-		self.lines[line_number].set_ydata(self.raw[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]-mean_raw)
+		mps_to_V = 0.11095 # calibrated
+		self.lines[line_number].set_ydata((self.raw[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]-mean_raw)/(self.sensitivity*mps_to_V))
 		self.lines[line_number].set_xdata(r)
 
 		self.ax[plot_number - 1].set_xlim(left=start.astype(datetime)+timedelta(seconds=comp*1.5),
 											right=end.astype(datetime))
-		self.ax[plot_number - 1].set_ylim(bottom=np.min(self.raw[i].data-mean_raw)
-											-np.ptp(self.raw[i].data-mean_raw)*0.1,
-											top=np.max(self.raw[i].data-mean_raw)
-											+np.ptp(self.raw[i].data-mean_raw)*0.1)
+		self.ax[plot_number - 1].set_ylim(bottom=np.min((self.raw[i].data-mean_raw)/(self.sensitivity*mps_to_V))
+											-np.ptp((self.raw[i].data-mean_raw)/(self.sensitivity*mps_to_V))*0.1,
+											top=np.max((self.raw[i].data-mean_raw)/(self.sensitivity*mps_to_V))
+											+np.ptp((self.raw[i].data-mean_raw)/(self.sensitivity*mps_to_V))*0.1)
 
-		self.ax[plot_number - 1].set_ylabel('Voltage [A/D counts]', color=self.fgcolor)
-		unit = "counts"
+		self.ax[plot_number - 1].set_ylabel('Voltage Estimation', color=self.fgcolor)
+		unit = "V"
 		self.ax[plot_number - 1].yaxis.set_major_formatter(EngFormatter(unit=unit))
 
 	def update_plot(self):
@@ -799,11 +803,11 @@ class Plot:
 		for i in range(self.num_chans):	# for each channel, update the plots
 			mean = int(round(np.mean(self.stream[i].data)))
 			mean_raw = int(round(np.mean(self.raw[i].data)))
-			# DEBUG
-			#if mean != 0:
-			#	print(mean)
+
 			self._draw_lines(i, start, end, mean, mean_raw)
+			
 			self._set_ch_specific_label(i)
+			
 			if self.spectrogram:
 				self._update_specgram(i, mean)
 			
