@@ -41,7 +41,7 @@
         "a_lta": 0.99999,
         "static_lta": true,
         "lta": 10,
-        "threshold": 8,
+        "threshold": 7,
         "reset": 5,
         "highpass": 0,
         "lowpass": 50,
