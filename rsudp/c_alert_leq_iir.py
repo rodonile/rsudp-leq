@@ -253,7 +253,7 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 		self.leq_sta = 10 * np.log10(self.v_2_mean_sta / (self.db_reference)**2)
 
 		# STA/LTA
-		self.stalta = self.leq_sta / self.leq_lta
+		self.stalta = self.leq_sta - self.leq_lta
 		self.stalta_trigger_time = self.stream[0].stats.endtime
 
 
