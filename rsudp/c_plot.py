@@ -709,14 +709,12 @@ class Plot:
 
 		if self.manual_scaling == False:
 			# Plot dB
-			self.lines[line_number].set_ydata(20 * 
-								np.log10(np.abs(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean) / (self.db_reference)))
+			self.lines[line_number].set_ydata(20 * np.log10(np.abs(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean) / (self.db_reference)))
 			self.lines[line_number].set_xdata(r)
 
 			# Plot Leq
 			r_ones = np.ones(r.shape)
-			leq = r_ones * 10 * 
-					np.log10(np.power(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean, 2).mean() / (self.db_reference)**2)
+			leq = r_ones * 10 * np.log10(np.power(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean, 2).mean() / (self.db_reference)**2)
 
 			self.lines[line_number + 1].set_ydata(leq)
 			self.lines[line_number + 1].set_xdata(r)
