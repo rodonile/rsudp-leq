@@ -116,7 +116,7 @@ class Plot:
 				 seconds=30, spectrogram=True,
 				 fullscreen=False, kiosk=False,
 				 deconv=False, manual_scaling=False, sensitivity=399650000, screencap=False,
-				 alert=True, testing=False, decibel=False, voltage=False):
+				 alert=True, testing=False, decibel=False, voltage=False, db_reference=1e-9):
 		"""
 		Initialize the plot process.
 
@@ -159,6 +159,9 @@ class Plot:
 		# Manual scaling (used instead of obspy deconvolution)
 		self.manual_scaling = manual_scaling
 		self.sensitivity = sensitivity
+
+		# dB reference
+		self.db_reference = db_reference
 
 		self.per_lap = 0.9
 		self.fullscreen = fullscreen
@@ -706,12 +709,14 @@ class Plot:
 
 		if self.manual_scaling == False:
 			# Plot dB
-			self.lines[line_number].set_ydata(20 * np.log10(np.abs(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean) / (1e-9)))
+			self.lines[line_number].set_ydata(20 * 
+								np.log10(np.abs(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean) / (self.db_reference)))
 			self.lines[line_number].set_xdata(r)
 
 			# Plot Leq
 			r_ones = np.ones(r.shape)
-			leq = r_ones * 10 * np.log10(np.power(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean, 2).mean() / (1e-9)**2)
+			leq = r_ones * 10 * 
+					np.log10(np.power(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean, 2).mean() / (self.db_reference)**2)
 
 			self.lines[line_number + 1].set_ydata(leq)
 			self.lines[line_number + 1].set_xdata(r)
@@ -719,24 +724,25 @@ class Plot:
 			self.ax[plot_number - 1].set_xlim(left=start.astype(datetime)+timedelta(seconds=comp*1.5),
 											  right=end.astype(datetime))
 			self.ax[plot_number - 1].set_ylim(bottom=0,
-											  top=20 * np.log10(np.abs(np.max(self.stream[i].data-mean)) / (1e-9)) + 0.1 * 20 * np.log10(np.abs(np.ptp(self.stream[i].data-mean)) / (1e-9)) )
+											  top=20 * np.log10(np.abs(np.max(self.stream[i].data-mean)) / (self.db_reference)) + 0.1 * 20 
+											  * np.log10(np.abs(np.ptp(self.stream[i].data-mean)) / (self.db_reference)) )
 
 		# Scale with static sensitivity (from V-counts to m/s) instead of using obspy deconvolution function
 		else:
 			# Plot dB
 			temp_raw_data = self.raw[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean_raw
 			# Fill lower thresh. values with 0dB value to avoid np.log10 error
-			#temp_raw_data[temp_raw_data < 1e-9 * self.sensitivity] = 1e-9 * self.sensitivity 
+			#temp_raw_data[temp_raw_data < self.db_reference * self.sensitivity] = self.db_reference * self.sensitivity 
 			# Still gives error even after removing zeros, for now disable warnings for this log10
 			np.seterr(divide = 'ignore') 
-			self.lines[line_number].set_ydata(20 * np.log10(np.abs((temp_raw_data) / self.sensitivity) / (1e-9)))
+			self.lines[line_number].set_ydata(20 * np.log10(np.abs((temp_raw_data) / self.sensitivity) / (self.db_reference)))
 			self.lines[line_number].set_xdata(r)
 			np.seterr(divide = 'warn') 
 
 			# Plot Leq
 			r_ones = np.ones(r.shape)
 			leq = r_ones * 10 * np.log10(
-				np.power((self.raw[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean_raw) / self.sensitivity, 2).mean() / (1e-9)**2)
+				np.power((self.raw[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean_raw) / self.sensitivity, 2).mean() / (self.db_reference)**2)
 
 			self.lines[line_number + 1].set_ydata(leq)
 			self.lines[line_number + 1].set_xdata(r)
@@ -744,8 +750,8 @@ class Plot:
 			self.ax[plot_number - 1].set_xlim(left=start.astype(datetime)+timedelta(seconds=comp*1.5),
 											  right=end.astype(datetime))
 			self.ax[plot_number - 1].set_ylim(bottom=0,
-											  top=20 * np.log10(np.abs(np.max((self.raw[i].data-mean_raw)/self.sensitivity)) / (1e-9)) 
-											  + 0.1 * 20 * np.log10(np.abs(np.ptp((self.raw[i].data-mean_raw)/self.sensitivity)) / (1e-9)) )
+											  top=20 * np.log10(np.abs(np.max((self.raw[i].data-mean_raw)/self.sensitivity)) / (self.db_reference)) 
+											  + 0.1 * 20 * np.log10(np.abs(np.ptp((self.raw[i].data-mean_raw)/self.sensitivity)) / (self.db_reference)) )
 
 
 		# General parameters

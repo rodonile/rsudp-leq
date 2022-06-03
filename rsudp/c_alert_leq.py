@@ -136,7 +136,7 @@ class Alert_Leq(rs.ConsumerThread):
 
 
 	def __init__(self, q, sta=5, lta=30, thresh=1.6, reset=1.55, bp=False,
-				 debug=True, cha='HZ', db_offset=0, sound=False, deconv=False, testing=False,
+				 debug=True, cha='HZ', db_reference=1e-9, sound=False, deconv=False, testing=False,
 				 *args, **kwargs):
 		"""
 		Initializing the alert thread with parameters to set up the recursive
@@ -150,7 +150,7 @@ class Alert_Leq(rs.ConsumerThread):
 		self.queue = q
 
 		self.default_ch = 'HZ'
-		self.db_offset = db_offset
+		self.db_reference = db_reference
 		self.sta = sta
 		self.lta = lta
 		self.thresh = thresh
@@ -228,14 +228,14 @@ class Alert_Leq(rs.ConsumerThread):
 		# For now don't implement any filter
 
 		# LTA: dB and Leq
-		db_stream_lta = 20 * np.log10(np.abs(self.stream[0].data) / (1e-9))
-		self.leq_lta = 10 * np.log10(np.power(self.stream[0].data, 2).mean() / (1e-9)**2)
+		db_stream_lta = 20 * np.log10(np.abs(self.stream[0].data) / (self.db_reference))
+		self.leq_lta = 10 * np.log10(np.power(self.stream[0].data, 2).mean() / (self.db_reference)**2)
 
 		# STA: db and Leq
 		obstart_sta = self.stream[0].stats.endtime - timedelta(seconds=self.sta)
 		stream_sta = self.stream.slice(starttime=obstart_sta)			# slice the STA stream to the specified length (seconds variable)
-		db_stream_sta = 20 * np.log10(np.abs(stream_sta[0].data) / (1e-9))
-		self.leq_sta = 10 * np.log10(np.power(stream_sta[0].data, 2).mean() / (1e-9)**2)
+		db_stream_sta = 20 * np.log10(np.abs(stream_sta[0].data) / (self.db_reference))
+		self.leq_sta = 10 * np.log10(np.power(stream_sta[0].data, 2).mean() / (self.db_reference)**2)
 		self.stalta = self.leq_sta / self.leq_lta
 		self.stalta_trigger_time = self.stream[0].stats.endtime
 

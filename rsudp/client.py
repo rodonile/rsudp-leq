@@ -167,6 +167,10 @@ def run(settings, debug):
 
 	output_dir = settings['settings']['output_dir']
 
+	# Other global variables
+	db_ref = settings['settings']['db_reference']
+	sensitivity = settings['settings']['scaling_sensitivity']
+
 
 	if settings['printdata']['enabled']:
 		# set up queue and process
@@ -207,11 +211,10 @@ def run(settings, debug):
 		else:
 			deconv = False
 		manual_scaling = settings['plot']['manual_scaling']
-		sensitivity = settings['plot']['sensitivity']
 		pq = mk_q()
 		PLOTTER = Plot(cha=cha, seconds=sec, spectrogram=spec,
 						fullscreen=full, kiosk=kiosk, deconv=deconv, manual_scaling=manual_scaling, sensitivity=sensitivity, q=pq,
-						screencap=screencap, alert=alert, testing=TESTING, decibel=dec, voltage=voltage)
+						screencap=screencap, alert=alert, testing=TESTING, decibel=dec, voltage=voltage, db_reference=db_ref)
 		# no mk_p() here because the plotter must be controlled by the main thread (this one)
 
 	if settings['forward']['enabled']:
@@ -265,7 +268,6 @@ def run(settings, debug):
 		reset = settings['alert_leq']['reset']
 		bp = [settings['alert_leq']['highpass'], settings['alert']['lowpass']]
 		cha = settings['alert_leq']['channel']
-		db_offset = settings['alert_leq']['db_offset']
 		if settings['alert_leq']['deconvolve']:
 			if settings['alert_leq']['units'].upper() in rs.UNITS:
 				deconv = settings['alert_leq']['units'].upper()
@@ -277,7 +279,7 @@ def run(settings, debug):
 		# set up queue and process
 		q = mk_q()
 		alrt = Alert_Leq(sta=sta, lta=lta, thresh=thresh, reset=reset, bp=bp,
-					 cha=cha, db_offset=db_offset, debug=debug, q=q, testing=TESTING,
+					 cha=cha, db_reference=db_ref, debug=debug, q=q, testing=TESTING,
 					 deconv=deconv)
 		mk_p(alrt)
 
@@ -288,7 +290,6 @@ def run(settings, debug):
 		reset = settings['alert_leq_iir']['reset']
 		bp = [settings['alert_leq_iir']['highpass'], settings['alert']['lowpass']]
 		cha = settings['alert_leq_iir']['channel']
-		db_offset = settings['alert_leq_iir']['db_offset']
 		if settings['alert_leq_iir']['deconvolve']:
 			if settings['alert_leq_iir']['units'].upper() in rs.UNITS:
 				deconv = settings['alert_leq_iir']['units'].upper()
@@ -297,13 +298,15 @@ def run(settings, debug):
 		else:
 			deconv = False
 		manual_scaling = settings['alert_leq_iir']['manual_scaling']
-		sensitivity = settings['alert_leq_iir']['sensitivity']
+		static_lta = settings['alert_leq_iir']['static_lta']
+		lta = settings['alert_leq_iir']['lta']
 
 		# set up queue and process
 		q = mk_q()
 		alrt = Alert_Leq_IIR(a_sta=a_sta, a_lta=a_lta, thresh=thresh, reset=reset, bp=bp,
-					 cha=cha, db_offset=db_offset, debug=debug, q=q, testing=TESTING,
-					 deconv=deconv, manual_scaling=manual_scaling, sensitivity=sensitivity)
+					 cha=cha, db_reference=db_ref, debug=debug, q=q, testing=TESTING,
+					 deconv=deconv, manual_scaling=manual_scaling, sensitivity=sensitivity,
+					 static_lta=static_lta, lta=lta)
 		mk_p(alrt)
 
 	if settings['alertsound']['enabled']:

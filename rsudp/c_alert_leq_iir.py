@@ -136,9 +136,9 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 					% (self.filt, modifier, self.freq), self.sender)
 
 
-	def __init__(self, q, a_sta=0.9931, a_lta=0.9999, thresh=1.1, reset=1.1, bp=False,
-				 debug=True, cha='HZ', db_offset=0, sound=False, deconv=False, manual_scaling=False,
-				 sensitivity=399650000, testing=False, *args, **kwargs):
+	def __init__(self, q, a_sta=0.91, a_lta=0.99999, thresh=1.08, reset=1.05, bp=False,
+				 debug=True, cha='HZ', db_reference=1e-9, sound=False, deconv=False, manual_scaling=False,
+				 sensitivity=399650000, static_lta=False, lta=70, testing=False, *args, **kwargs):
 		"""
 		Initializing the alert thread with parameters to set up the recursive
 		STA-LTA trigger, filtering, and the channel used for listening.
@@ -153,9 +153,11 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 		self.init = False
 
 		self.default_ch = 'HZ'
-		self.db_offset = db_offset
+		self.db_reference = db_reference
 		self.a_sta = a_sta
 		self.a_lta = a_lta
+		self.static_lta = static_lta
+		self.lta = lta
 		self.thresh = thresh
 		self.reset = reset
 		self.debug = debug
@@ -237,13 +239,20 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 		'''
 		# Here we could filter the stream with obspy (e.g. lowpass, bandpass), if required..
 
-		# LTA and STA based on IIR filter
-		self.v_2_mean_lta = self.a_lta * self.v_2_mean_lta + (1-self.a_lta) * np.power(self.stream_data, 2).mean()
-		self.leq_lta = 10 * np.log10(self.v_2_mean_lta / (1e-9)**2)
+		# LTA 
+		if self.static_lta:
+			# Static LTA as Leq for reference noise level
+			self.leq_lta = self.lta
+		else:
+			# LTA as Leq with IIR filter
+			self.v_2_mean_lta = self.a_lta * self.v_2_mean_lta + (1-self.a_lta) * np.power(self.stream_data, 2).mean()
+			self.leq_lta = 10 * np.log10(self.v_2_mean_lta / (self.db_reference)**2)
 
+		# STA with IIR filter
 		self.v_2_mean_sta = self.a_sta * self.v_2_mean_sta + (1-self.a_sta) * np.power(self.stream_data, 2).mean()
-		self.leq_sta = 10 * np.log10(self.v_2_mean_sta / (1e-9)**2)
+		self.leq_sta = 10 * np.log10(self.v_2_mean_sta / (self.db_reference)**2)
 
+		# STA/LTA
 		self.stalta = self.leq_sta / self.leq_lta
 		self.stalta_trigger_time = self.stream[0].stats.endtime
 
@@ -340,9 +349,9 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 			if n > 3 and self.init == False:
 				# Initialize sta and lta values based on first sensor data
 				self.v_2_mean_lta = np.power(self.stream_data, 2).mean()
-				self.leq_lta = 10 * np.log10(self.v_2_mean_lta / (1e-9)**2)
+				self.leq_lta = 10 * np.log10(self.v_2_mean_lta / (self.db_reference)**2)
 				self.v_2_mean_sta = np.power(self.stream_data, 2).mean()
-				self.leq_sta = 10 * np.log10(self.v_2_mean_sta / (1e-9)**2)
+				self.leq_sta = 10 * np.log10(self.v_2_mean_sta / (self.db_reference)**2)
 				self.init = True 
 
 				# print the current STA/LTA calculation
