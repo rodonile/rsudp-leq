@@ -6,7 +6,7 @@
         "inventory_file": "/home/pi/github/rsudp/rsudp/inventory_files/R6833_response.xml",
         "debug": true,
         "scaling_sensitivity": 250000000,
-        "db_reference": 1e-9},
+        "db_reference": 1e-6},
     "write": {
         "enabled": false,
         "channels": ["EHZ"]},
@@ -40,7 +40,7 @@
         "a_sta": 0.91,
         "a_lta": 0.99999,
         "static_lta": true,
-        "lta": 70,
+        "lta": 10,
         "threshold": 8,
         "reset": 5,
         "highpass": 0,
