@@ -11,9 +11,11 @@
 
 ## The enhanced live-plotting module:
 ![GUI](docs/_images/rsudp_gui_rodonile.png)
+(dB reference value: 1 $\mu m/s$)
 
 
 ## Installation instruction
+Clone this repo, then run:
 
     cd rsudp
     bash unix-install-rsudp.sh
