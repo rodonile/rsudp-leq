@@ -77,46 +77,17 @@ class Plot:
 	:param bool spectrogram: whether to plot the spectrogram. Defaults to True.
 	:param bool fullscreen: whether to plot in a fullscreen window. Defaults to False.
 	:param bool kiosk: whether to plot in kiosk mode (true fullscreen). Defaults to False.
-	:param deconv: whether to deconvolve the signal. Defaults to False.
-	:type deconv: str or bool
 	:param bool screencap: whether or not to save screenshots of events. Defaults to False.
 	:param bool alert: whether to draw the number of events at startup. Defaults to True.
 	:param queue.Queue q: queue of data and messages sent by :class:`rsudp.c_consumer.Consumer`
 	:raise ImportError: if the module cannot import either of the Matplotlib Qt5 or TkAgg backends
 	'''
-	def _set_deconv(self, deconv):
-		'''
-		This function sets the deconvolution units. Allowed values are as follows:
-
-		.. |ms2| replace:: m/s\ :sup:`2`\
-
-		- ``'VEL'`` - velocity (m/s)
-		- ``'ACC'`` - acceleration (|ms2|)
-		- ``'GRAV'`` - fraction of acceleration due to gravity (g, or 9.81 |ms2|)
-		- ``'DISP'`` - displacement (m)
-		- ``'CHAN'`` - channel-specific unit calculation, i.e. ``'VEL'`` for geophone channels and ``'ACC'`` for accelerometer channels
-
-		:param str deconv: ``'VEL'``, ``'ACC'``, ``'GRAV'``, ``'DISP'``, or ``'CHAN'``
-		'''
-		self.deconv = deconv if (deconv in rs.UNITS) else False
-		if self.deconv and rs.inv:
-			deconv = deconv.upper()
-			if self.deconv in rs.UNITS:
-				self.units = rs.UNITS[self.deconv][0]
-				self.unit = rs.UNITS[self.deconv][1]
-			printM('Signal deconvolution set to %s' % (self.deconv), self.sender)
-		else:
-			self.units = rs.UNITS['CHAN'][0]
-			self.unit = rs.UNITS['CHAN'][1]
-			self.deconv = False
-		printM('Seismogram units are %s' % (self.units), self.sender)
-
-
+	
 	def __init__(self, q, cha='all',
-				 seconds=30, spectrogram=True,
-				 fullscreen=False, kiosk=False,
-				 deconv=False, manual_scaling=False, sensitivity=399650000, screencap=False,
-				 alert=True, testing=False, decibel=False, voltage=False, db_reference=1e-9):
+				 seconds=60, spectrogram=True,
+				 fullscreen=True, kiosk=False,
+				 scaling=False, sensitivity=250000000, screencap=False,
+				 alert=True, testing=False, decibel=False, voltage=False, db_reference=1e-6):
 		"""
 		Initialize the plot process.
 
@@ -155,14 +126,27 @@ class Plot:
 		self.decibel = decibel
 		self.voltage = voltage
 
-		self._set_deconv(deconv)
 		# Manual scaling (used instead of obspy deconvolution)
-		self.manual_scaling = manual_scaling
+		self.scaling = scaling
 		self.sensitivity = sensitivity
 
 		# dB reference
 		self.db_reference = db_reference
 
+		# Specify stream units
+		self.units_raw = rs.UNITS['CHAN'][1]
+		self.unit_raw = rs.UNITS['CHAN'][1]
+		printM('Raw stream units are %s' % (self.units_raw.strip(' ')), self.sender)
+		if self.scaling:
+			self.units = rs.UNITS['VEL'][0]
+			self.unit = rs.UNITS['VEL'][1]
+			printM('Stream scaling from %s to %s' % (self.units_raw.strip(' '), self.units.strip(' ')), self.sender)
+		else: 
+			self.units = self.units_raw
+			self.unit = self.unit_raw
+		printM('Plot units are %s' % (self.units.strip(' ')), self.sender)
+
+		# Other plot settings
 		self.per_lap = 0.9
 		self.fullscreen = fullscreen
 		self.kiosk = kiosk
@@ -184,12 +168,6 @@ class Plot:
 		self.linecolor = '#c28285' # seismogram color
 
 		printM('Starting.', self.sender)
-
-	def deconvolve(self):
-		'''
-		Send the streams to the central library deconvolve function.
-		'''
-		helpers.deconvolve(self)
 
 	def getq(self):
 		'''
@@ -218,7 +196,7 @@ class Plot:
 			if self.screencap:
 				printM('Saving png in about %i seconds' % (self.save_pct * (self.seconds)), self.sender)
 				self.save.append(event) # append 
-			self.fig.suptitle('%s.%s live output - detected events: %s' # title
+			self.fig.suptitle('%s.%s Raspberry Shake Geophone Live Output - Detected Events: %s' # title
 							% (self.net, self.stn, self.events),
 							fontsize=14, color=self.fgcolor, x=0.52)
 			self.fig.canvas.set_window_title('(%s) %s.%s - Raspberry Shake Monitor' % (self.events, self.net, self.stn))
@@ -329,7 +307,7 @@ class Plot:
 		'''
 		Sets the figure title back to something that makes sense for the live viewer.
 		'''
-		self.fig.suptitle('%s.%s live output - detected events: %s' # title
+		self.fig.suptitle('%s.%s Raspberry Shake Geophone Live Output - Detected Events: %s' # title
 						  % (self.net, self.stn, self.events),
 						  fontsize=14, color=self.fgcolor, x=0.52)
 
@@ -346,7 +324,7 @@ class Plot:
 			self.fig.canvas.window().statusBar().setVisible(False) # remove bottom bar
 		self.fig.canvas.set_window_title('%s.%s - Raspberry Shake Monitor' % (self.net, self.stn))
 		self.fig.patch.set_facecolor(self.bgcolor)	# background color
-		self.fig.suptitle('%s.%s live output%s'	# title
+		self.fig.suptitle('%s.%s Raspberry Shake Geophone Live Output%s'	# title
 						  % (self.net, self.stn, self.event_text),
 						  fontsize=14, color=self.fgcolor,x=0.52)
 		self.ax, self.lines = [], []				# list for subplot axes and lines artists
@@ -458,7 +436,7 @@ class Plot:
 							  )-np.timedelta64(self.seconds, 's')	# numpy time
 		end = np.datetime64(self.stream[0].stats.endtime)	# numpy time
 
-		im = mpimg.imread(pr.resource_filename('rsudp', os.path.join('img', 'version1-01-small.png')))
+		im = mpimg.imread(pr.resource_filename('rsudp', os.path.join('img', 'empa_logo.png')))
 		
 		self.imax = self.fig.add_axes([0.015, 0.944, 0.2, 0.056], anchor='NW') # [left, bottom, right, top]
 		self.imax.imshow(im, aspect='equal', interpolation='sinc')
@@ -609,22 +587,6 @@ class Plot:
 		self.handle_resize()
 
 
-	def _set_ch_specific_label(self, i):
-		'''
-		Set the formatter units if the deconvolution is channel-specific.
-		'''
-		if self.deconv:
-			if (self.deconv in 'CHAN'):
-				ch = self.stream[i].stats.channel
-				if ('HZ' in ch) or ('HN' in ch) or ('HE' in ch):
-					unit = rs.UNITS['VEL'][1]
-				elif ('EN' in ch):
-					unit = rs.UNITS['ACC'][1]
-				else:
-					unit = rs.UNITS['CHAN'][1]
-				self.ax[i*self.mult].yaxis.set_major_formatter(EngFormatter(unit='%s' % unit.lower()))
-
-
 	def _draw_lines(self, i, start, end, mean, mean_raw):
 		'''
 		Updates the line data in the plot.
@@ -638,7 +600,7 @@ class Plot:
 		r = np.arange(start, end, np.timedelta64(int(1000/self.sps), 'ms'))[-len(
 					self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]):]
 
-		if self.manual_scaling == False:
+		if self.scaling == False:
 			self.lines[i].set_ydata(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]-mean)
 			self.lines[i].set_xdata(r)	# (1/self.per_lap)/2
 			self.ax[i*self.mult].set_xlim(left=start.astype(datetime)+timedelta(seconds=comp*1.5),
@@ -648,7 +610,7 @@ class Plot:
 											top=np.max(self.stream[i].data-mean)
 											+np.ptp(self.stream[i].data-mean)*0.1)
 		else: 
-			# Manual_scaling enabled: scale with static sensitivity parameter instead of using obspy deconvolution function
+			# Scaling enabled: scale with static sensitivity parameter instead of using obspy deconvolution function
 			self.lines[i].set_ydata((self.raw[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]-mean_raw)/self.sensitivity)
 			self.lines[i].set_xdata(r)	# (1/self.per_lap)/2
 			self.ax[i*self.mult].set_xlim(left=start.astype(datetime)+timedelta(seconds=comp*1.5),
@@ -707,7 +669,7 @@ class Plot:
 		r = np.arange(start, end, np.timedelta64(int(1000/self.sps), 'ms'))[-len(
 					self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))]):]
 
-		if self.manual_scaling == False:
+		if self.scaling == False:
 			# Plot dB
 			self.lines[line_number].set_ydata(20 * np.log10(np.abs(self.stream[i].data[int(-self.sps*(self.seconds-(comp/2))):-int(self.sps*(comp/2))] - mean) / (self.db_reference)))
 			self.lines[line_number].set_xdata(r)
@@ -810,8 +772,6 @@ class Plot:
 
 			self._draw_lines(i, start, end, mean, mean_raw)
 			
-			self._set_ch_specific_label(i)
-			
 			if self.spectrogram:
 				self._update_specgram(i, mean)
 			
@@ -846,7 +806,7 @@ class Plot:
 			i += 1
 		self.stream = rs.copy(self.stream)	# essential, otherwise the stream has a memory leak
 		self.raw = rs.copy(self.raw)		# and could eventually crash the machine
-		self.deconvolve()
+		helpers.prepare_stream_for_scaling(self)
 		self.update_plot()
 		if u >= 0:				# avoiding a matplotlib broadcast error
 			self.figloop()
@@ -886,7 +846,7 @@ class Plot:
 		for i in range((self.totchns)*2): # fill up a stream object
 			self.getq()
 		self.set_sps()
-		self.deconvolve()
+		helpers.prepare_stream_for_scaling(self)
 		self.setup_plot()
 
 		n = 0	# number of iterations without plotting

@@ -17,14 +17,7 @@ from rsudp.c_printraw import PrintRaw
 from rsudp.c_write import Write
 from rsudp.c_plot import Plot, MPL
 from rsudp.c_forward import Forward
-from rsudp.c_alert import Alert
-from rsudp.c_alert_leq import Alert_Leq
 from rsudp.c_alert_leq_iir import Alert_Leq_IIR
-from rsudp.c_alertsound import AlertSound
-from rsudp.c_custom import Custom
-from rsudp.c_tweet import Tweeter
-from rsudp.c_telegram import Telegrammer
-from rsudp.c_rsam import RSAM
 from rsudp.c_testing import Testing
 from rsudp.t_testdata import TestData
 import pkg_resources as pr
@@ -201,21 +194,32 @@ def run(settings, debug):
 		voltage = settings['plot']['voltage']
 		full = settings['plot']['fullscreen']
 		kiosk = settings['plot']['kiosk']
-		screencap = settings['plot']['eq_screenshots']
-		alert = settings['alert']['enabled']
-		if settings['plot']['deconvolve']:
-			if settings['plot']['units'].upper() in rs.UNITS:
-				deconv = settings['plot']['units'].upper()
-			else:
-				deconv = 'CHAN'
-		else:
-			deconv = False
-		manual_scaling = settings['plot']['manual_scaling']
+		screencap = settings['plot']['event_screenshots']
+		alert = settings['alert_leq_iir']['enabled']
+		scaling = settings['plot']['scaling']
 		pq = mk_q()
 		PLOTTER = Plot(cha=cha, seconds=sec, spectrogram=spec,
-						fullscreen=full, kiosk=kiosk, deconv=deconv, manual_scaling=manual_scaling, sensitivity=sensitivity, q=pq,
+						fullscreen=full, kiosk=kiosk, scaling=scaling, sensitivity=sensitivity, q=pq,
 						screencap=screencap, alert=alert, testing=TESTING, decibel=dec, voltage=voltage, db_reference=db_ref)
 		# no mk_p() here because the plotter must be controlled by the main thread (this one)
+
+	if settings['alert_leq_iir']['enabled']:
+		a_sta = settings['alert_leq_iir']['a_sta']
+		a_lta = settings['alert_leq_iir']['a_lta']
+		thresh = settings['alert_leq_iir']['threshold']
+		reset = settings['alert_leq_iir']['reset']
+		cha = settings['alert_leq_iir']['channel']
+		scaling = settings['alert_leq_iir']['scaling']
+		static_lta = settings['alert_leq_iir']['static_lta']
+		lta = settings['alert_leq_iir']['lta']
+
+		# set up queue and process
+		q = mk_q()
+		alrt = Alert_Leq_IIR(a_sta=a_sta, a_lta=a_lta, thresh=thresh, reset=reset,
+					 cha=cha, db_reference=db_ref, debug=debug, q=q, testing=TESTING,
+					 scaling=scaling, sensitivity=sensitivity,
+					 static_lta=static_lta, lta=lta)
+		mk_p(alrt)
 
 	if settings['forward']['enabled']:
 		# put settings in namespace
@@ -237,173 +241,6 @@ def run(settings, debug):
 			printE('List length mismatch: %s addresses and %s ports in forward section of settings file' % (
 										len(addr), len(port)), sender=SENDER)
 			_xit(1)
-
-	if settings['alert']['enabled']:
-		# put settings in namespace
-		sta = settings['alert']['sta']
-		lta = settings['alert']['lta']
-		thresh = settings['alert']['threshold']
-		reset = settings['alert']['reset']
-		bp = [settings['alert']['highpass'], settings['alert']['lowpass']]
-		cha = settings['alert']['channel']
-		if settings['alert']['deconvolve']:
-			if settings['alert']['units'].upper() in rs.UNITS:
-				deconv = settings['alert']['units'].upper()
-			else:
-				deconv = 'CHAN'
-		else:
-			deconv = False
-
-		# set up queue and process
-		q = mk_q()
-		alrt = Alert(sta=sta, lta=lta, thresh=thresh, reset=reset, bp=bp,
-					 cha=cha, debug=debug, q=q, testing=TESTING,
-					 deconv=deconv)
-		mk_p(alrt)
-
-	if settings['alert_leq']['enabled']:
-		sta = settings['alert_leq']['sta']
-		lta = settings['alert_leq']['lta']
-		thresh = settings['alert_leq']['threshold']
-		reset = settings['alert_leq']['reset']
-		bp = [settings['alert_leq']['highpass'], settings['alert']['lowpass']]
-		cha = settings['alert_leq']['channel']
-		if settings['alert_leq']['deconvolve']:
-			if settings['alert_leq']['units'].upper() in rs.UNITS:
-				deconv = settings['alert_leq']['units'].upper()
-			else:
-				deconv = 'CHAN'
-		else:
-			deconv = False
-
-		# set up queue and process
-		q = mk_q()
-		alrt = Alert_Leq(sta=sta, lta=lta, thresh=thresh, reset=reset, bp=bp,
-					 cha=cha, db_reference=db_ref, debug=debug, q=q, testing=TESTING,
-					 deconv=deconv)
-		mk_p(alrt)
-
-	if settings['alert_leq_iir']['enabled']:
-		a_sta = settings['alert_leq_iir']['a_sta']
-		a_lta = settings['alert_leq_iir']['a_lta']
-		thresh = settings['alert_leq_iir']['threshold']
-		reset = settings['alert_leq_iir']['reset']
-		bp = [settings['alert_leq_iir']['highpass'], settings['alert']['lowpass']]
-		cha = settings['alert_leq_iir']['channel']
-		if settings['alert_leq_iir']['deconvolve']:
-			if settings['alert_leq_iir']['units'].upper() in rs.UNITS:
-				deconv = settings['alert_leq_iir']['units'].upper()
-			else:
-				deconv = 'CHAN'
-		else:
-			deconv = False
-		manual_scaling = settings['alert_leq_iir']['manual_scaling']
-		static_lta = settings['alert_leq_iir']['static_lta']
-		lta = settings['alert_leq_iir']['lta']
-
-		# set up queue and process
-		q = mk_q()
-		alrt = Alert_Leq_IIR(a_sta=a_sta, a_lta=a_lta, thresh=thresh, reset=reset, bp=bp,
-					 cha=cha, db_reference=db_ref, debug=debug, q=q, testing=TESTING,
-					 deconv=deconv, manual_scaling=manual_scaling, sensitivity=sensitivity,
-					 static_lta=static_lta, lta=lta)
-		mk_p(alrt)
-
-	if settings['alertsound']['enabled']:
-		soundloc = os.path.expanduser(os.path.expanduser(settings['alertsound']['mp3file']))
-		if soundloc in ['doorbell', 'alarm', 'beeps', 'sonar']:
-			soundloc = pr.resource_filename('rsudp', os.path.join('rs_sounds', '%s.mp3' % soundloc))
-
-		q = mk_q()
-		alsnd = AlertSound(q=q, testing=TESTING, soundloc=soundloc)
-		mk_p(alsnd)
-
-	runcustom = False
-	try:
-		f = False
-		win_ovr = False
-		if settings['custom']['enabled']:
-			# put settings in namespace
-			f = settings['custom']['codefile']
-			win_ovr = settings['custom']['win_override']
-			if f == 'n/a':
-				f = False
-			runcustom = True
-	except KeyError as e:
-		if settings['alert']['exec'] != 'eqAlert':
-			printW('the custom code function has moved to its own module (rsudp.c_custom)', sender='Custom')
-			f = settings['alert']['exec']
-			win_ovr = settings['alert']['win_override']
-			runcustom = True
-		else:
-			raise KeyError(e)
-	if runcustom:
-		# set up queue and process
-		q = mk_q()
-		cstm = Custom(q=q, codefile=f, win_ovr=win_ovr, testing=TESTING)
-		mk_p(cstm)
-
-
-	if settings['tweets']['enabled']:
-		global TWITTER
-		consumer_key = settings['tweets']['api_key']
-		consumer_secret = settings['tweets']['api_secret']
-		access_token = settings['tweets']['access_token']
-		access_token_secret = settings['tweets']['access_secret']
-		tweet_images = settings['tweets']['tweet_images']
-		extra_text = settings['tweets']['extra_text']
-
-		q = mk_q()
-		TWITTER = Tweeter(q=q, consumer_key=consumer_key, consumer_secret=consumer_secret,
-						access_token=access_token, access_token_secret=access_token_secret,
-						tweet_images=tweet_images, extra_text=extra_text, testing=TESTING)
-		mk_p(TWITTER)
-
-	if settings['telegram']['enabled']:
-		global TELEGRAM
-		token = settings['telegram']['token']
-		chat_ids = settings['telegram']['chat_id'].strip(' ').split(',')
-		send_images = settings['telegram']['send_images']
-		extra_text = settings['telegram']['extra_text']
-
-		for chat_id in chat_ids:
-			sender = "Telegram id %s" % (chat_id)
-			q = mk_q()
-			TELEGRAM = Telegrammer(q=q, token=token, chat_id=chat_id,
-								   send_images=send_images, extra_text=extra_text,
-								   sender=sender, testing=TESTING)
-			mk_p(TELEGRAM)
-
-	if settings['rsam']['enabled']:
-		# put settings in namespace
-		fwaddr = settings['rsam']['fwaddr']
-		fwport = settings['rsam']['fwport']
-		fwformat = settings['rsam']['fwformat']
-		interval = settings['rsam']['interval']
-		cha = settings['rsam']['channel']
-		quiet = settings['rsam']['quiet']
-		if settings['rsam']['deconvolve']:
-			if settings['rsam']['units'].upper() in rs.UNITS:
-				deconv = settings['rsam']['units'].upper()
-			else:
-				deconv = 'CHAN'
-		else:
-			deconv = False
-
-		# set up queue and process
-		q = mk_q()
-		rsam = RSAM(q=q, interval=interval, cha=cha, deconv=deconv,
-					fwaddr=fwaddr, fwport=fwport, fwformat=fwformat,
-					quiet=quiet, testing=TESTING)
-
-		mk_p(rsam)
-
-
-	# start additional modules here!
-	################################
-
-
-	################################
 
 	if TESTING:
 		# initialize test consumer

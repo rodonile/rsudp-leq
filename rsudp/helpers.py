@@ -27,75 +27,49 @@ def default_settings(output_dir='%s/rsudp' % os.path.expanduser('~').replace('\\
 	:rtype: str
 	'''
 	def_settings = r"""{
-"settings": {
-    "port": 8888,
-    "station": "Z0000",
-    "output_dir": "%s",
-    "debug": true},
-"printdata": {
-    "enabled": false},
-"write": {
-    "enabled": false,
-    "channels": ["all"]},
-"plot": {
-    "enabled": true,
-    "duration": 90,
-    "spectrogram": true,
-    "fullscreen": false,
-    "kiosk": false,
-    "eq_screenshots": false,
-    "channels": ["all"],
-    "deconvolve": true,
-    "units": "CHAN"},
-"forward": {
-    "enabled": false,
-    "address": ["192.168.1.254"],
-    "port": [8888],
-    "channels": ["all"],
-    "fwd_data": true,
-    "fwd_alarms": false},
-"alert": {
-    "enabled": true,
-    "channel": "HZ",
-    "sta": 6,
-    "lta": 30,
-    "threshold": 3.95,
-    "reset": 0.9,
-    "highpass": 0.8,
-    "lowpass": 9,
-    "deconvolve": false,
-    "units": "VEL"},
-"alertsound": {
-    "enabled": false,
-    "mp3file": "doorbell"},
-"custom": {
-    "enabled": false,
-    "codefile": "n/a",
-    "win_override": false},
-"tweets": {
-    "enabled": false,
-    "tweet_images": true,
-    "api_key": "n/a",
-    "api_secret": "n/a",
-    "access_token": "n/a",
-    "access_secret": "n/a",
-    "extra_text": ""},
-"telegram": {
-    "enabled": false,
-    "send_images": true,
-    "token": "n/a",
-    "chat_id": "n/a",
-    "extra_text": ""},
-"rsam": {
-    "enabled": false,
-    "quiet": true,
-    "fwaddr": "192.168.1.254",
-    "fwport": 8887,
-    "fwformat": "LITE",
-    "channel": "HZ",
-    "interval": 10,
-    "deconvolve": false,
-    "units": "VEL"}
+    "settings": {
+        "port": 8888,
+        "station": "OFFLN",
+        "output_dir": "%s",
+        "inventory_file": "C:/Users/SH1/Documents/GitHub/rsudp/rsudp/inventory_files/R6833_response.xml",
+        "debug": true,
+        "scaling_sensitivity": 250000000,
+        "db_reference": 1e-6},
+    "printdata": {
+        "enabled": false},
+    "write": {
+        "enabled": false,
+        "channels": ["EHZ"]},
+    "plot": {
+        "enabled": true,
+		"channels": ["EHZ"],
+		"units": "VEL",
+        "duration": 60,
+        "spectrogram": true,
+        "decibel": true,
+        "voltage": false,
+        "fullscreen": true,
+        "kiosk": false,
+        "event_screenshots": true,
+        "scaling": true},
+    "alert_leq_iir": {
+        "enabled": true,
+        "channel": "HZ",
+		"units": "VEL",
+        "a_sta": 0.91,
+        "a_lta": 0.99999,
+        "static_lta": true,
+        "lta": 10,
+        "threshold": 7,
+        "reset": 5,
+        "scaling": true},
+    "forward": {
+        "enabled": false,
+        "address": ["192.168.1.254"],
+        "port": [8888],
+        "channels": ["all"],
+        "fwd_data": true,
+        "fwd_alarms": false}
 }
 
 """ % (output_dir)
@@ -471,6 +445,11 @@ def deconv_rbm_inst(self, trace, output):
 	'''
 	trace.stats.units = ' counts'
 
+# Use this instead of deconvolve (in windows deconvolve doesn't work due to obspy dependencies)
+def prepare_stream_for_scaling(self):
+	self.stream = self.raw.copy()
+	for trace in self.stream:
+		trace.stats.units = self.units
 
 def deconvolve(self):
 	'''

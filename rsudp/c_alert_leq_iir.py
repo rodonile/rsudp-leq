@@ -2,7 +2,6 @@ import sys
 from datetime import timedelta, datetime
 from dateutil import tz
 import rsudp.raspberryshake as rs
-from obspy.signal.trigger import recursive_sta_lta, trigger_onset
 from rsudp import printM, printW, printE
 from rsudp import COLOR, helpers
 from rsudp.test import TEST
@@ -32,64 +31,11 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 	:param float sta: short term average (STA) duration in seconds.
 	:param float lta: long term average (LTA) duration in seconds.
 	:param float thresh: threshold for STA/LTA trigger.
-	:type bp: :py:class:`bool` or :py:class:`list`
-	:param bp: bandpass filter parameters. if set, should be in the format ``[highpass, lowpass]``
 	:param bool debug: whether or not to display max STA/LTA calculation live to the console.
 	:param str cha: listening channel (defaults to [S,E]HZ)
 	:param queue.Queue q: queue of data and messages sent by :class:`rsudp.c_consumer.Consumer`
 
 	"""
-
-	def _set_filt(self, bp):
-		'''
-		This function sets the filter parameters (if specified).
-		Set to a boolean if not filtering, or ``[highpass, lowpass]``
-		if filtering.
-
-		:param bp: bandpass filter parameters. if set, should be in the format ``[highpass, lowpass]``
-		:type bp: :py:class:`bool` or :py:class:`list`
-		'''
-		self.filt = False
-		if bp:
-			self.freqmin = bp[0]
-			self.freqmax = bp[1]
-			self.freq = 0
-			if (bp[0] <= 0) and (bp[1] >= (self.sps/2)):
-				self.filt = False
-			elif (bp[0] > 0) and (bp[1] >= (self.sps/2)):
-				self.filt = 'highpass'
-				self.freq = bp[0]
-				desc = 'low corner %s' % (bp[0])
-			elif (bp[0] <= 0) and (bp[1] <= (self.sps/2)):
-				self.filt = 'lowpass'
-				self.freq = bp[1]
-			else:
-				self.filt = 'bandpass'
-
-
-	def _set_deconv(self, deconv):
-		'''
-		This function sets the deconvolution units. Allowed values are as follows:
-
-		.. |ms2| replace:: m/s\ :sup:`2`\
-
-		- ``'VEL'`` - velocity (m/s)
-		- ``'ACC'`` - acceleration (|ms2|)
-		- ``'GRAV'`` - fraction of acceleration due to gravity (g, or 9.81 |ms2|)
-		- ``'DISP'`` - displacement (m)
-		- ``'CHAN'`` - channel-specific unit calculation, i.e. ``'VEL'`` for geophone channels and ``'ACC'`` for accelerometer channels
-
-		:param str deconv: ``'VEL'``, ``'ACC'``, ``'GRAV'``, ``'DISP'``, or ``'CHAN'``
-		'''
-		deconv = deconv.upper() if deconv else False
-		self.deconv = deconv if (deconv in rs.UNITS) else False
-		if self.deconv and rs.inv:
-			self.units = '%s (%s)' % (rs.UNITS[self.deconv][0], rs.UNITS[self.deconv][1]) if (self.deconv in rs.UNITS) else self.units
-			printM('Signal deconvolution set to %s' % (self.deconv), self.sender)
-		else:
-			self.units = rs.UNITS['CHAN'][1]
-			self.deconv = False
-		printM('Alert stream units are %s' % (self.units.strip(' ').lower()), self.sender)
 
 
 	def _find_chn(self):
@@ -123,22 +69,9 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 			sys.exit(2)
 
 
-	def _print_filt(self):
-		'''
-		Prints stream filtering information.
-		'''
-		if self.filt == 'bandpass':
-			printM('Alert stream will be %s filtered from %s to %s Hz'
-					% (self.filt, self.freqmin, self.freqmax), self.sender)
-		elif self.filt in ('lowpass', 'highpass'):
-			modifier = 'below' if self.filt in 'lowpass' else 'above'
-			printM('Alert stream will be %s filtered %s %s Hz'
-					% (self.filt, modifier, self.freq), self.sender)
-
-
-	def __init__(self, q, a_sta=0.91, a_lta=0.99999, thresh=1.08, reset=1.05, bp=False,
-				 debug=True, cha='HZ', db_reference=1e-9, sound=False, deconv=False, manual_scaling=False,
-				 sensitivity=399650000, static_lta=False, lta=70, testing=False, *args, **kwargs):
+	def __init__(self, q, a_sta=0.91, a_lta=0.99999, thresh=7, reset=5,
+				 debug=True, cha='HZ', db_reference=1e-6, scaling=False,
+				 sensitivity=250000000, static_lta=False, lta=10, testing=False, *args, **kwargs):
 		"""
 		Initializing the alert thread with parameters to set up the recursive
 		STA-LTA trigger, filtering, and the channel used for listening.
@@ -178,17 +111,19 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 		self.leq_sta = 0
 		self.stalta_trigger_time = 0
 		self.maxstalta = 0
-		self.units = 'counts'
-		
-		self._set_deconv(deconv)
-		self.manual_scaling = manual_scaling
-		self.sensitivity = sensitivity
-
 		self.exceed = False
-		self.sound = sound
+		self.scaling = scaling
+		self.sensitivity = sensitivity
 		
-		self._set_filt(bp)
-		self._print_filt()
+		# Specify stream units
+		self.units_raw = rs.UNITS['CHAN'][1]
+		printM('Raw stream units are %s' % (self.units_raw.strip(' ')), self.sender)
+		if self.scaling:
+			self.units = rs.UNITS['VEL'][0]
+			printM('Stream scaling from %s to %s' % (self.units_raw.strip(' '), self.units.strip(' ')), self.sender)
+		else: 
+			self.units = self.units_raw
+		printM('Alarm units are %s' % (self.units.strip(' ')), self.sender)
 
 
 	def _getq(self):
@@ -209,14 +144,6 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 			sys.exit()
 		else:
 			return False
-
-
-	def _deconvolve(self):
-		'''
-		Deconvolves the stream associated with this class.
-		'''
-		if self.deconv:
-			helpers.deconvolve(self)
 
 
 
@@ -335,9 +262,7 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 			self.raw = rs.copy(self.raw)	# necessary to avoid memory leak
 			self.stream = self.raw.copy()
 
-			self._deconvolve()
-
-			if self.manual_scaling:
+			if self.scaling:
 				# Manually perform the scaling instead of using the deconvolution function
 				mean_raw = int(round(np.mean(self.raw[0].data)))
 				self.stream_data = (self.raw[0].data - mean_raw) / self.sensitivity
@@ -376,8 +301,13 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 				self.stream = self.raw.copy()
 
 			elif n == 0:
-				printM('Starting Alert_Leq_IIR trigger with a_sta=%s, a_lta=%s, and threshold=%s on channel=%s'
-					   % (self.a_sta, self.a_lta, self.thresh, self.cha), self.sender)
+				if self.static_lta:
+					printM('Starting Alert_Leq_IIR trigger with a_STA=%s, LTA=%s dB, and TRESHOLD=%s dB'
+							% (self.a_sta, self.lta, self.thresh), self.sender)
+				else:
+					printM('Starting Alert_Leq_IIR trigger with a_STA=%s, a_LTA=%s, and TRESHOLD=%s dB'
+					   		% (self.a_sta, self.a_lta, self.thresh), self.sender)
+
 			elif n == 3:
 				printM('Leq trigger up and running normally.',
 					   self.sender)
