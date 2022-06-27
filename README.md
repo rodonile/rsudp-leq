@@ -22,7 +22,7 @@ This is the standard plotting module from rsudp extended to enable displaying of
 
 - **decibel**: true --> adds live intensity (dB) plot with Leq average
 - **voltage**: true --> shows live voltage counts
-- **scaling**: true --> directly compute velocity using the *scaling_sensitivity* parameter instead of the deconvolution module. If this is set to true, the *deconvolve* option is overwritten (no matter if true or false).
+- **scaling**: true --> compute velocity using the *scaling_sensitivity* parameter. If disabled the plot shows voltage counts from the AD converter.
 
 ## alert_leq_IIR:
 This module uses an IIR filter to compute the STA and LTA Leq, hence it doesn't require storing all the samples in the buffer. This allows to have longer LTA intervals while running without issue on light hardware (e.g. Raspberry Pi). 
@@ -32,8 +32,8 @@ IIR first order filter:
 
 - **a_sta**: "remembering" factor for the IIR filter for the STA calculation
 - **a_lta**: "remembering" factor for the IIR filter for the LTA calculation
-- **static_lta**: true --> use a static value for the LTA instead of an Leq calculation
+- **static_lta**: true --> use a static value for the LTA instead of an Leq calculation (preferred method, as varying LTA would contains also high noise events in the calculation)
 - **lta**: Value for LTA if *static_lta* is set to true. Default 10dB (computed with 1 $\mu m/s$ (1e-6) dB reference).
-- **scaling**: true --> directly compute velocity using the *scaling_sensitivity* parameter instead of the deconvolution module. If this is set to true, the *deconvolve* option is overwritten (no matter if true or false).
+- **scaling**: true --> compute velocity using the *scaling_sensitivity* parameter. If disabled the calculations are performed using voltage counts from the AD converter.
 
 
