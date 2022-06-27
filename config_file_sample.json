@@ -1,0 +1,46 @@
+{
+    "settings": {
+        "port": 8888,
+        "station": "OFFLN",
+        "output_dir": "C:/Users/%USERNAME%/Documents/rsudp/data",
+        "inventory_file": "C:/Users/%USERNAME%/Documents/GitHub/rsudp/rsudp/inventory_files/R6833_response.xml",
+        "debug": true,
+        "scaling_sensitivity": 250000000,
+        "db_reference": 1e-6},
+    "printdata": {
+        "enabled": false},
+    "write": {
+        "enabled": false,
+        "channels": ["EHZ"]},
+    "plot": {
+        "enabled": true,
+		"channels": ["EHZ"],
+		"units": "VEL",
+        "duration": 60,
+        "spectrogram": true,
+        "decibel": true,
+        "voltage": false,
+        "fullscreen": true,
+        "kiosk": false,
+        "event_screenshots": true,
+        "scaling": true},
+    "alert_leq_iir": {
+        "enabled": true,
+        "channel": "HZ",
+		"units": "VEL",
+        "a_sta": 0.91,
+        "a_lta": 0.99999,
+        "static_lta": true,
+        "lta": 10,
+        "threshold": 7,
+        "reset": 5,
+        "scaling": true},
+    "forward": {
+        "enabled": false,
+        "address": ["192.168.1.254"],
+        "port": [8888],
+        "channels": ["all"],
+        "fwd_data": true,
+        "fwd_alarms": false}
+}
+

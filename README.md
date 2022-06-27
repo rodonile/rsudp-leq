@@ -4,25 +4,37 @@
 This is a minimal version of rsudp with only the relevant modules and dependencies for the use case of small ground vibration disturbance detection, ready for production deployment in windows OS.
 
 ## Installation instruction
+- Clone this repo
+- Run the [installation script](win-install-rsudp.bat) by double-clicking it.
 
- 
 
 ## How to start the program
-
+- Run the [start script](win-start-rsudp.bat) by double-clicking it.
+- Suggestion: create a shortcut to this file that can be run from everywhere (e.g. the Desktop)
 
 
 # Configuration File Parameters
+A configuration file is automatically placed in the **C:\users\%USERNAME%\.config\rsudp** folder by the install script. An [example config file](config_file_sample.json) is also available in this repo. You will probably need to change the location of the inventory file and desired output directory.
+
 ## settings:
-- **station**: OFFLN  --> trigger use of offline inventory file (in inventory_files folder) for deconvolution (does not attempt to download it from the server)
-- **scaling_sensitivity**: sensitivity of the geophone. This parameter is used to compute velocity [$m/s$] from the AD-converter voltage counts. It is only used in modules where the *manual_scaling* option is set to true. Default value: 250000000 [$counts/(m/s)$]. It provides and alternative to the built-in obspy deconvolution module. 
+- **port**: UDP port where the program listens for packets. The port is specified on the raspberry shake GUI toghether with the destination IP Address (see below).
+
+ TODO: ADD PICTURE HERE
+
+- **station**: OFFLN  --> use offline inventory file (in inventory_files folder).
+- **scaling_sensitivity**: sensitivity of the geophone. This parameter is used to compute velocity [$m/s$] from the AD-converter voltage counts. It is only used in modules where the *scaling* option is set to true. Default value: 250000000 [$counts/(m/s)$].
 - **db_reference**: reference velocity value to compute dB intensity. Default value: 1 $\mu m/s$ (1e-6).
+- **debug**: if true send text to command line. Default: true (recommended).
 
 ## plot:
-This is the standard plotting module from rsudp extended to enable displaying of intensity(dB) as well as Leq(dB) values.
+This is the standard live plotting module from rsudp extended to enable displaying of intensity(dB) as well as Leq(dB) values.
 
-- **decibel**: true --> adds live intensity (dB) plot with Leq average
-- **voltage**: true --> shows live voltage counts
+- **duration**: Inverval in seconds for the live plot. Default 60s.
+- **spectrogram**: true --> show spectrogram of the signal. Default: true.
+- **decibel**: true --> adds live intensity (dB) plot with Leq average. Default: true.
+- **voltage**: true --> shows live voltage counts. Default: false.
 - **scaling**: true --> compute velocity using the *scaling_sensitivity* parameter. If disabled the plot shows voltage counts from the AD converter.
+- **fullscreen**: 
 
 ## alert_leq_IIR:
 This module uses an IIR filter to compute the STA and LTA Leq, hence it doesn't require storing all the samples in the buffer. This allows to have longer LTA intervals while running without issue on light hardware (e.g. Raspberry Pi). 

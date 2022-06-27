@@ -26,12 +26,15 @@ def default_settings(output_dir='%s/rsudp' % os.path.expanduser('~').replace('\\
 	:return: default settings string in formatted json
 	:rtype: str
 	'''
+	# Inventory file location
+	inventory_file_loc='%s/Documents/GitHub/rsudp/rsudp/inventory_files/R6833_response.xml' % os.path.expanduser('~').replace('\\', '/')
+
 	def_settings = r"""{
     "settings": {
         "port": 8888,
         "station": "OFFLN",
         "output_dir": "%s",
-        "inventory_file": "C:/Users/SH1/Documents/GitHub/rsudp/rsudp/inventory_files/R6833_response.xml",
+        "inventory_file": "%s",
         "debug": true,
         "scaling_sensitivity": 250000000,
         "db_reference": 1e-6},
@@ -72,7 +75,7 @@ def default_settings(output_dir='%s/rsudp' % os.path.expanduser('~').replace('\\
         "fwd_alarms": false}
 }
 
-""" % (output_dir)
+""" % (output_dir, inventory_file_loc)
 	if verbose:
 		print('By default output_dir is set to %s' % output_dir)
 	return def_settings
