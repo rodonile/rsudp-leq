@@ -269,7 +269,10 @@ class Plot:
 		self.save.reverse()
 
 		event_time_str = event[1].strftime('%Y-%m-%d-%H%M%S')				# event time for filename
-		title_time_str = event[1].strftime('%Y-%m-%d %H:%M:%S.%f')[:22]		# pretty event time for plot
+		#title_time_str = event[1].strftime('%Y-%m-%d %H:%M:%S.%f')[:22]		# pretty event time for plot
+		event_timestamp = event[1].timestamp
+		event_time_ZH = datetime.fromtimestamp(event_timestamp, tz=pytz.timezone("Europe/Zurich"))
+		title_time_str = event_time_ZH.strftime('%Y-%m-%d %H:%M:%S.%f')[:22]
 
 		# change title (just for a moment)
 		self.fig.suptitle('%s.%s detected event - %s UTC' # title
