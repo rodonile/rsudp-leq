@@ -275,7 +275,7 @@ class Plot:
 		title_time_str = event_time_ZH.strftime('%Y-%m-%d %H:%M:%S.%f')[:22]
 
 		# change title (just for a moment)
-		self.fig.suptitle('%s.%s detected event - %s UTC' # title
+		self.fig.suptitle('%s.%s detected event - %s Europe/Zurich time' # title
 						  % (self.net, self.stn, title_time_str),
 						  fontsize=14, color=self.fgcolor, x=0.52)
 
