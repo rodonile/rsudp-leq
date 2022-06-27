@@ -15,9 +15,9 @@ This is a minimal version of rsudp with only the relevant modules and dependenci
 A configuration file is automatically placed in the **C:\users\\%USERNAME%\\.config\rsudp** folder by the install script. An [example config file](config_file_sample.json) is also available in this repo. You will probably need to change the location of the inventory file and desired output directory.
 
 ## settings:
-- **port**: UDP port where the program listens for packets. The port is specified on the raspberry shake Admin Webpage toghether with the destination IP Address:
-    <img src="docs/rs_webgui_datacast.PNG" width="350" height="225">
-
+- **port**: UDP port where the program listens for packets. The port is specified on the raspberry shake Admin Webpage toghether with the destination IP Address:  
+        <img src="docs/rs_webgui_datacast.PNG" width="350" height="225">
+  
 - **station**: OFFLN  --> use offline inventory file (in inventory_files folder).
 - **scaling_sensitivity**: sensitivity of the geophone. This parameter is used to compute velocity [$m/s$] from the AD-converter voltage counts. It is only used in modules where the *scaling* option is set to true. Default value: 250000000 [$counts/(m/s)$].
 - **db_reference**: reference velocity value to compute dB intensity. Default value: 1 $\mu m/s$ (1e-6).
