@@ -1,5 +1,3 @@
-# TODO: finish this section with all the config file parameters
-
 # The Windows branch
 This is a minimal version of rsudp with only the relevant modules and dependencies for the use case of small ground vibration disturbance detection, ready for production deployment in windows OS.
 
@@ -14,7 +12,7 @@ This is a minimal version of rsudp with only the relevant modules and dependenci
 
 
 # Configuration File Parameters
-A configuration file is automatically placed in the **C:\users\%USERNAME%\.config\rsudp** folder by the install script. An [example config file](config_file_sample.json) is also available in this repo. You will probably need to change the location of the inventory file and desired output directory.
+A configuration file is automatically placed in the **C:\users\\%USERNAME%\\.config\rsudp** folder by the install script. An [example config file](config_file_sample.json) is also available in this repo. You will probably need to change the location of the inventory file and desired output directory.
 
 ## settings:
 - **port**: UDP port where the program listens for packets. The port is specified on the raspberry shake GUI toghether with the destination IP Address (see below).
