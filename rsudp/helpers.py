@@ -38,11 +38,6 @@ def default_settings(output_dir='%s/rsudp' % os.path.expanduser('~').replace('\\
         "debug": true,
         "scaling_sensitivity": 250000000,
         "db_reference": 1e-6},
-    "printdata": {
-        "enabled": false},
-    "write": {
-        "enabled": false,
-        "channels": ["EHZ"]},
     "plot": {
         "enabled": true,
 		"channels": ["EHZ"],
@@ -66,6 +61,11 @@ def default_settings(output_dir='%s/rsudp' % os.path.expanduser('~').replace('\\
         "threshold": 7,
         "reset": 5,
         "scaling": true},
+    "printdata": {
+        "enabled": false},
+    "write": {
+        "enabled": false,
+        "channels": ["EHZ"]},
     "forward": {
         "enabled": false,
         "address": ["192.168.1.254"],
