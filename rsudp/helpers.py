@@ -61,18 +61,22 @@ def default_settings(output_dir='%s/rsudp' % os.path.expanduser('~').replace('\\
         "threshold": 7,
         "reset": 5,
         "scaling": true},
-    "printdata": {
-        "enabled": false},
     "write": {
-        "enabled": false,
-        "channels": ["EHZ"]},
+        "enabled": true,
+        "channels": ["EHZ"],
+		"csv_output": false,
+		"database_push": true,
+		"database_URL": localhost,
+		"database_PORT": 8086},
     "forward": {
         "enabled": false,
-        "address": ["192.168.1.254"],
+        "address": ["192.168.10.2"],
         "port": [8888],
-        "channels": ["all"],
-        "fwd_data": true,
-        "fwd_alarms": false}
+        "channels": ["EHZ"],
+        "fwd_data": false,
+        "fwd_alarms": true}
+    "printdata": {
+        "enabled": false}
 }
 
 """ % (output_dir, inventory_file_loc)

@@ -175,9 +175,13 @@ def run(settings, debug):
 		global WRITER
 		# set up queue and process
 		cha = settings['write']['channels']
+		csv_output = settings['write']['csv_output']
+		db_push = settings['write']['database_push']
+		db_URL = settings['write']['database_URL']
+		db_PORT = settings['write']['database_PORT']
 		q = mk_q()
-		WRITER = Write(q=q, data_dir=output_dir,
-					   cha=cha, testing=TESTING)
+		WRITER = Write(q=q, data_dir=output_dir, cha=cha, testing=TESTING, csv_output=csv_output,
+						database_push=db_push, database_URL=db_URL, database_PORT=db_PORT)
 		mk_p(WRITER)
 
 	if settings['plot']['enabled'] and MPL:
