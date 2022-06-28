@@ -74,7 +74,7 @@ def default_settings(output_dir='%s/rsudp' % os.path.expanduser('~').replace('\\
         "port": [8888],
         "channels": ["EHZ"],
         "fwd_data": false,
-        "fwd_alarms": true}
+        "fwd_alarms": true},
     "printdata": {
         "enabled": false}
 }
