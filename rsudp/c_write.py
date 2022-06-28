@@ -20,8 +20,8 @@ class Write(rs.ConsumerThread):
 	:param queue.Queue q: queue of data and messages sent by :class:`rsudp.c_consumer.Consumer`
 	:param bool debug: whether or not to display messages when writing data to disk.
 	"""
-	def __init__(self, q, data_dir, database_URL, database_PORT, testing=False, debug=False, cha='all',csv_output=False,
-					database_push=True):
+	def __init__(self, q, data_dir, testing=False, debug=False, cha='all',csv_output=False,
+					database_push=True, database_URL="localhost", database_PORT=8086):
 		"""
 		Initialize the process
 		"""
