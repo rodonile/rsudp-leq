@@ -66,7 +66,7 @@ def default_settings(output_dir='%s/rsudp' % os.path.expanduser('~').replace('\\
         "channels": ["EHZ"],
 		"csv_output": false,
 		"database_push": true,
-		"database_URL": localhost,
+		"database_URL": "localhost",
 		"database_PORT": 8086},
     "forward": {
         "enabled": false,
