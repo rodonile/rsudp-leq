@@ -1,10 +1,15 @@
 import sys, os
 import time
-from datetime import timedelta
+from datetime import datetime, timedelta
+from dateutil import tz
+import pytz
 from obspy import UTCDateTime
 import rsudp.raspberryshake as rs
 from rsudp import printM, printW, printE, helpers
 from rsudp.test import TEST
+import csv
+import numpy as np
+import pandas as pd
 
 class Write(rs.ConsumerThread):
 	"""
@@ -15,7 +20,8 @@ class Write(rs.ConsumerThread):
 	:param queue.Queue q: queue of data and messages sent by :class:`rsudp.c_consumer.Consumer`
 	:param bool debug: whether or not to display messages when writing data to disk.
 	"""
-	def __init__(self, q, data_dir, testing=False, debug=False, cha='all'):
+	def __init__(self, q, data_dir, testing=False, debug=False, cha='all',csv_output=False,
+					database_push=True, database_URL, database_PORT):
 		"""
 		Initialize the process
 		"""
@@ -26,13 +32,21 @@ class Write(rs.ConsumerThread):
 		self.debug = debug
 		if self.testing:
 			self.debug = True
+		self.csv_output = csv_output
+		self.db_push = database_push
+		self.db_URL = database_URL
+		self.db_PORT = database_PORT 
 
 		self.queue = q
 
 		self.stream = rs.Stream()
-		self.outdir = os.path.join(data_dir, 'data')
-		self.outfiles = []
-
+		self.outdir = os.path.join(data_dir, 'data').replace('\\', '/')
+		
+		# Define outfile
+		current_timestamp = UTCDateTime.now().timestamp
+		current_time_ZH = datetime.fromtimestamp(current_timestamp, tz=pytz.timezone("Europe/Zurich"))
+		self.outfile = self.outdir + '/RS-meas-%s.csv' % (current_time_ZH.strftime('%Y-%m-%d-%H.%M.%S'))
+		
 		self.chans = []
 		helpers.set_channels(self, cha)
 
@@ -73,21 +87,6 @@ class Write(rs.ConsumerThread):
 		'''
 		self.sps = self.stream[0].stats.sampling_rate
 
-	def elapse(self, new=False):
-		'''
-		Ticks self variables over into a new day for file naming purposes.
-
-		:param bool new: If ``False``, the program is starting. If ``True``, the UTC date just elapsed.
-		'''
-		self.st = UTCDateTime.now()
-		self.y, self.m, self.d = self.st.year, self.st.month, self.st.day
-		self.j = self.st.strftime('%j')
-		self.newday = UTCDateTime(self.y, self.m, self.d, 0, 0) + timedelta(days=1.1)
-		self.newday = UTCDateTime(self.newday.year, self.newday.month, self.newday.day, 0, 0)
-		if new:
-			self.last = self.newday
-		else:
-			self.last = self.st
 
 	def slicestream(self):
 		'''
@@ -98,30 +97,36 @@ class Write(rs.ConsumerThread):
 	def _tracewrite(self, t):
 		'''
 		Processing for the :py:func:`rsudp.c_write.Write.write` function.
-		Writes an input trace to disk.
+		Writes an input trace to disk and/or computes 1s-Leq and pushes to influxdb.
 
 		:type t: obspy.core.trace.Trace
 		:param t: The trace segment to write to disk.
 
 		'''
-		enc = 'STEIM2'	# encoding
-		if isinstance(t.data, rs.np.ma.masked_array):
-			t.data = t.data.filled(fill_value=0) # fill array (to avoid obspy write error)
-		outfile = self.outdir + '/%s.%s.00.%s.D.%s.%s' % (t.stats.network,
-							t.stats.station, t.stats.channel, self.y, self.j)
-		if not outfile in self.outfiles:
-			self.outfiles.append(outfile)
-		if os.path.exists(os.path.abspath(outfile)):
-			with open(outfile, 'ab') as fh:
-				t.write(fh, format='MSEED', encoding=enc)
+		# Add timestamps to data
+		#timestamps = np.ones(len(t.data))
+		starttime = np.datetime64(t.stats.starttime)
+		endtime = np.datetime64(t.stats.endtime)
+		timestamps = np.arange(starttime, endtime, np.timedelta64(10, 'ms'))        # 100sps <--> 1 sample every 10ms						
+		data = t.data[1:len(t.data)]		# remove first measurement because it was on last chunk already
+
+		# DEBUG LINES
+		#printM("Starttime = %s" % starttime, self.sender)
+		#printM("Endtime = %s" % endtime, self.sender)
+		#printM("Len data = %s" % len(data), self.sender)
+		#printM("Len timestamp = %s" % len(timestamps), self.sender)
+
+		if self.csv_output:
+			with open(self.outfile, 'a') as csvfile:
+				df = pd.DataFrame(timestamps, columns = ['timestamp'])
+				df['voltage_counts'] = data
+				df.to_csv(csvfile, header=False, index=False, line_terminator='\n')
 				if self.debug:
 					printM('%s records to %s'
-							% (len(t.data), outfile), self.sender)
-		else:
-			t.write(outfile, format='MSEED', encoding=enc)
-			if self.debug:
-				printM('%s records to new file %s'
-						% (len(t.data), outfile), self.sender)
+							% (len(t.data), self.outfile), self.sender)
+
+		if self.db_push:
+			printM("TODO: pushing into influxdb, URL=%s, PORT=%s" % (db_URL, db_PORT) ,self.sender)
 
 
 	def write(self, stream=False):
@@ -135,8 +140,7 @@ class Write(rs.ConsumerThread):
 		'''
 		if not stream:
 			self.last = self.stream[0].stats.endtime - timedelta(seconds=5)
-			stream = self.stream.copy().slice(
-						endtime=self.last, nearest_sample=False)
+			stream = self.stream.copy().slice(endtime=self.last, nearest_sample=False)
 
 		for t in stream:
 			self._tracewrite(t)
@@ -147,21 +151,13 @@ class Write(rs.ConsumerThread):
 		"""
 		Reads packets and coordinates write operations.
 		"""
-		self.elapse()
 
 		self.getq()
 		self.set_sps()
 		self.getq()
-		printM('miniSEED output directory: %s' % (self.outdir), self.sender)
-		if self.inv:
-			printM('Writing inventory file: %s/%s.%s.00.xml' % (self.outdir,
-					self.stream[0].stats.network,
-					self.stream[0].stats.station), self.sender)
-			self.inv.write('%s/%s.%s.00.xml' % (self.outdir,
-					self.stream[0].stats.network,
-					self.stream[0].stats.station),
-					format='STATIONXML')
-		printM('Beginning miniSEED output.', self.sender)
+		# TODO: print to csv file only if self.csv (csv setting in config file) is true
+		printM('CSV output directory: %s' % (self.outdir.replace('\\', '/')), self.sender)
+		printM('Beginning output.', self.sender)
 		wait_pkts = (self.numchns * 10) / (rs.tf / 1000) 	# comes out to 10 seconds (tf is in ms)
 
 		n = 0
@@ -176,16 +172,8 @@ class Write(rs.ConsumerThread):
 					n += 1
 					break
 			if n >= wait_pkts:
-				if self.newday < UTCDateTime.now(): # end of previous day and start of new day
-					self.write(self.stream.slice(
-								endtime=self.newday, nearest_sample=False))
-					self.stream = self.stream.slice(
-								starttime=self.newday, nearest_sample=False)
-					self.elapse(new=True)
-				else:
-					self.write()
-					self.stream = self.stream.slice(
-								starttime=self.last, nearest_sample=False)
+				self.write()
+				self.stream = self.stream.slice(starttime=self.last, nearest_sample=False)
 				self.stream = rs.copy(self.stream)
 				n = 0
 
