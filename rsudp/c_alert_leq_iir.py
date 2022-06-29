@@ -262,6 +262,12 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 			self.raw = rs.copy(self.raw)	# necessary to avoid memory leak
 			self.stream = self.raw.copy()
 
+			# Cut the stream once it starts being bigger than 10min (s.t. it doesn't grow indefinitely)
+			if self.stream[0].stats.endtime >= self.stream[0].stats.starttime + timedelta(seconds=600):
+				obstart = self.stream[0].stats.endtime - timedelta(seconds=600)
+				self.raw = self.raw.slice(starttime=obstart)
+				self.stream = self.stream.slice(starttime=obstart)
+
 			if self.scaling:
 				# Manually perform the scaling instead of using the deconvolution function
 				mean_raw = int(round(np.mean(self.raw[0].data)))
