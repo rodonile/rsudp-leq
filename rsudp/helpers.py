@@ -67,8 +67,8 @@ def default_settings(output_dir='%s/rsudp' % os.path.expanduser('~').replace('\\
 		"csv_output": false,
 		"database_push": true,
 		"database_URL": "localhost",
-		"database_PORT": 8086},
-		"scaling": true
+		"database_PORT": 8086,
+		"scaling": true},
     "forward": {
         "enabled": false,
         "address": ["192.168.10.2"],
