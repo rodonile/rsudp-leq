@@ -179,9 +179,11 @@ def run(settings, debug):
 		db_push = settings['write']['database_push']
 		db_URL = settings['write']['database_URL']
 		db_PORT = settings['write']['database_PORT']
+		scaling = settings['write']['scaling']
 		q = mk_q()
 		WRITER = Write(q=q, data_dir=output_dir, cha=cha, testing=TESTING, csv_output=csv_output,
-						database_push=db_push, database_URL=db_URL, database_PORT=db_PORT)
+						database_push=db_push, database_URL=db_URL, database_PORT=db_PORT, 
+						scaling=scaling, sensitivity=sensitivity, db_reference=db_ref)
 		mk_p(WRITER)
 
 	if settings['plot']['enabled'] and MPL:

@@ -70,7 +70,7 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 
 
 	def __init__(self, q, a_sta=0.91, a_lta=0.99999, thresh=7, reset=5,
-				 debug=True, cha='HZ', db_reference=1e-6, scaling=False,
+				 debug=True, cha='HZ', db_reference=1e-6, scaling=True,
 				 sensitivity=250000000, static_lta=False, lta=10, testing=False, *args, **kwargs):
 		"""
 		Initializing the alert thread with parameters to set up the recursive

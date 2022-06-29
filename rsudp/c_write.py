@@ -21,7 +21,8 @@ class Write(rs.ConsumerThread):
 	:param bool debug: whether or not to display messages when writing data to disk.
 	"""
 	def __init__(self, q, data_dir, testing=False, debug=False, cha='all',csv_output=False,
-					database_push=True, database_URL="localhost", database_PORT=8086):
+					database_push=True, database_URL="localhost", database_PORT=8086, 
+					scaling=True, sensitivity=250000000, db_reference=1e-6):
 		"""
 		Initialize the process
 		"""
@@ -36,6 +37,9 @@ class Write(rs.ConsumerThread):
 		self.db_push = database_push
 		self.db_URL = database_URL
 		self.db_PORT = database_PORT 
+		self.scaling = scaling
+		self.sensitivity = sensitivity
+		self.db_reference = db_reference
 
 		self.queue = q
 
@@ -46,6 +50,7 @@ class Write(rs.ConsumerThread):
 		current_timestamp = UTCDateTime.now().timestamp
 		current_time_ZH = datetime.fromtimestamp(current_timestamp, tz=pytz.timezone("Europe/Zurich"))
 		self.outfile = self.outdir + '/RS-meas-%s.csv' % (current_time_ZH.strftime('%Y-%m-%d-%H.%M.%S'))
+		self.header = True 				# flag for setting header to csv file
 		
 		self.chans = []
 		helpers.set_channels(self, cha)
@@ -104,29 +109,58 @@ class Write(rs.ConsumerThread):
 
 		'''
 		# Add timestamps to data
-		#timestamps = np.ones(len(t.data))
 		starttime = np.datetime64(t.stats.starttime)
 		endtime = np.datetime64(t.stats.endtime)
 		timestamps = np.arange(starttime, endtime, np.timedelta64(10, 'ms'))        # 100sps <--> 1 sample every 10ms						
-		data = t.data[1:len(t.data)]		# remove first measurement because it was on last chunk already
-
+		
 		# DEBUG LINES
 		#printM("Starttime = %s" % starttime, self.sender)
 		#printM("Endtime = %s" % endtime, self.sender)
-		#printM("Len data = %s" % len(data), self.sender)
 		#printM("Len timestamp = %s" % len(timestamps), self.sender)
+
+		starttime_ms = round(t.stats.starttime.timestamp * 1e3)
+		endtime_ms = round(t.stats.endtime.timestamp * 1e3)
+		timestamps_ms = np.arange(starttime_ms, endtime_ms, 10)       				# 100sps <--> 1 sample every 10ms		
+		
+		# DEBUG LINES
+		#printM("Starttime_ms = %s" % starttime_ms, self.sender)
+		#printM("Endtime_ms = %s" % endtime_ms, self.sender)
+		#printM("Len timestamp_ms = %s" % len(timestamps_ms), self.sender)
+
+		data = t.data[1:len(t.data)]		# remove first measurement because it was on last chunk already
+		#printM("Len data = %s" % len(data), self.sender)
+		
+		# Adjust mean
+		mean_raw = int(round(np.mean(data)))
+		data = data - mean_raw
+
+		# If scaling=true, scale and also compute velocity and intensity
+		if self.scaling:
+			velocity = data / self.sensitivity
+			intensity = 20 * np.log10(np.abs(velocity/self.db_reference))
 
 		if self.csv_output:
 			with open(self.outfile, 'a') as csvfile:
-				df = pd.DataFrame(timestamps, columns = ['timestamp'])
+				df = pd.DataFrame(timestamps_ms, columns = ['timestamp_ms'])
+				df['timestamp [UTC]'] = timestamps
 				df['voltage_counts'] = data
-				df.to_csv(csvfile, header=False, index=False, line_terminator='\n')
+
+				if self.scaling:
+					df['velocity[m/s]'] = velocity
+					df['intensity[dB]'] = intensity
+
+				if self.header:
+					df.to_csv(csvfile, header=True, index=False, line_terminator='\n')
+					self.header = False
+				else:
+					df.to_csv(csvfile, header=False, index=False, line_terminator='\n')
+				
 				if self.debug:
 					printM('%s records to %s'
 							% (len(t.data), self.outfile), self.sender)
 
-		if self.db_push:
-			printM("TODO: pushing into influxdb, URL=%s, PORT=%s" % (db_URL, db_PORT) ,self.sender)
+		#if self.db_push:
+			# TODO push data into influx 
 
 
 	def write(self, stream=False):
@@ -155,9 +189,12 @@ class Write(rs.ConsumerThread):
 		self.getq()
 		self.set_sps()
 		self.getq()
-		# TODO: print to csv file only if self.csv (csv setting in config file) is true
-		printM('CSV output directory: %s' % (self.outdir.replace('\\', '/')), self.sender)
-		printM('Beginning output.', self.sender)
+		if self.csv_output:
+			printM('CSV output directory: %s' % (self.outdir.replace('\\', '/')), self.sender)
+			printM('Beginning CSV output.', self.sender)
+		if self.database_push:
+			printM('Database URL: %s and PORT: %s' % (self.database_URL, self.database_PORT), self.sender)
+			printM('Beginning database push.', self.sender)
 		wait_pkts = (self.numchns * 10) / (rs.tf / 1000) 	# comes out to 10 seconds (tf is in ms)
 
 		n = 0
