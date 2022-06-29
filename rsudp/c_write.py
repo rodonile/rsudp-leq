@@ -192,8 +192,8 @@ class Write(rs.ConsumerThread):
 		if self.csv_output:
 			printM('CSV output directory: %s' % (self.outdir.replace('\\', '/')), self.sender)
 			printM('Beginning CSV output.', self.sender)
-		if self.database_push:
-			printM('Database URL: %s and PORT: %s' % (self.database_URL, self.database_PORT), self.sender)
+		if self.db_push:
+			printM('Database URL: %s and PORT: %s' % (self.db_URL, self.db_PORT), self.sender)
 			printM('Beginning database push.', self.sender)
 		wait_pkts = (self.numchns * 10) / (rs.tf / 1000) 	# comes out to 10 seconds (tf is in ms)
 
