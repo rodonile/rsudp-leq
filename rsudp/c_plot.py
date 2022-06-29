@@ -270,11 +270,11 @@ class Plot:
 		event = self.save.pop()
 		self.save.reverse()
 
-		event_time_str = event[1].strftime('%Y-%m-%d-%H%M%S')				# event time for filename
 		#title_time_str = event[1].strftime('%Y-%m-%d %H:%M:%S.%f')[:22]		# pretty event time for plot
 		event_timestamp = event[1].timestamp
 		event_time_ZH = datetime.fromtimestamp(event_timestamp, tz=pytz.timezone("Europe/Zurich"))
 		title_time_str = event_time_ZH.strftime('%Y-%m-%d %H:%M:%S.%f')[:22]
+		event_time_str = event_time_ZH.strftime('%Y-%m-%d-%H.%M.%S')			# event time for filename
 
 		# change title (just for a moment)
 		self.fig.suptitle('%s.%s detected event - %s Europe/Zurich time' # title
@@ -297,7 +297,7 @@ class Plot:
 		:param obspy.core.utcdatetime.UTCDateTime event_time: Event time as an obspy UTCDateTime object. Defaults to ``UTCDateTime.now()``.
 		:param str event_time_str: Event time as a string, in the format ``'%Y-%m-%d-%H%M%S'``. This is used to set the filename.
 		'''
-		figname = os.path.join(get_scap_dir(), '%s-%s.png' % (self.stn, event_time_str))
+		figname = os.path.join(get_scap_dir(), 'Trigger-Event-%s.png' % (event_time_str))
 		elapsed = rs.UTCDateTime.now() - event_time
 		if int(elapsed) > 0:
 			printM('Saving png %i seconds after alarm' % (elapsed), sender=self.sender)

@@ -266,9 +266,11 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 				# Manually perform the scaling instead of using the deconvolution function
 				mean_raw = int(round(np.mean(self.raw[0].data)))
 				self.stream_data = (self.raw[0].data - mean_raw) / self.sensitivity
+				self.stream_data[self.stream_data < self.db_reference] = self.db_reference				# Set values less than db_ref to 0db
 			else:
 				mean = int(round(np.mean(self.stream[0].data)))
 				self.stream_data = self.stream[0].data - mean
+				self.stream_data[self.stream_data < self.db_reference * self.sensitivity] = self.db_reference * self.sensitivity 	# Set values less than db_ref to 0db
 
 
 			if n > 3 and self.init == False:

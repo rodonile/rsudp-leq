@@ -18,7 +18,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     include_package_data=True,
     install_requires=['obspy', 'numpy', 'matplotlib<3.2', 'pydub', 'twython',
-                      'python-telegram-bot', 'pandas'],
+                      'python-telegram-bot', 'pandas', 'influxdb-client'],
     entry_points = {
         'console_scripts': [
             'rs-packetloss=rsudp.packetloss:main',

@@ -10,6 +10,7 @@ from rsudp.test import TEST
 import csv
 import numpy as np
 import pandas as pd
+from influxdb_client import InfluxDBClient, Point, WriteApi, WriteOptions
 
 class Write(rs.ConsumerThread):
 	"""
@@ -52,6 +53,12 @@ class Write(rs.ConsumerThread):
 		self.outfile = self.outdir + '/RS-meas-%s.csv' % (current_time_ZH.strftime('%Y-%m-%d-%H.%M.%S'))
 		self.header = True 				# flag for setting header to csv file
 		
+		# InfluxDB writer
+		#self.client = InfluxDBClient.from_config_file("_influxdb_config.ini") # not working...
+		self.client = InfluxDBClient(url="http://localhost:8086", token="OhicM0adEjpBHYX9iRbigBBavXXzAS-OPuU68wguAMOpIEx-SsAzJYgB306EB6uKjBKy-EeRZSeAmKoW2eAxbQ==", 
+									 org="empa", debug=False)
+		self.write_api = self.client.write_api(write_options=WriteOptions(batch_size=1))
+
 		self.chans = []
 		helpers.set_channels(self, cha)
 
@@ -108,16 +115,12 @@ class Write(rs.ConsumerThread):
 		:param t: The trace segment to write to disk.
 
 		'''
-		# Add timestamps to data
-		starttime = np.datetime64(t.stats.starttime)
-		endtime = np.datetime64(t.stats.endtime)
-		timestamps = np.arange(starttime, endtime, np.timedelta64(10, 'ms'))        # 100sps <--> 1 sample every 10ms						
-		
-		# DEBUG LINES
-		#printM("Starttime = %s" % starttime, self.sender)
-		#printM("Endtime = %s" % endtime, self.sender)
-		#printM("Len timestamp = %s" % len(timestamps), self.sender)
+		# Datetime64 Timestamps
+		starttime_64 = np.datetime64(t.stats.starttime)
+		endtime_64 = np.datetime64(t.stats.endtime)
+		timestamps = np.arange(starttime_64, endtime_64, np.timedelta64(10, 'ms'))        # 100sps <--> 1 sample every 10ms						
 
+		# Ms timestamps
 		starttime_ms = round(t.stats.starttime.timestamp * 1e3)
 		endtime_ms = round(t.stats.endtime.timestamp * 1e3)
 		timestamps_ms = np.arange(starttime_ms, endtime_ms, 10)       				# 100sps <--> 1 sample every 10ms		
@@ -131,13 +134,8 @@ class Write(rs.ConsumerThread):
 		#printM("Len data = %s" % len(data), self.sender)
 		
 		# Adjust mean
-		mean_raw = int(round(np.mean(data)))
-		data = data - mean_raw
-
-		# If scaling=true, scale and also compute velocity and intensity
-		if self.scaling:
-			velocity = data / self.sensitivity
-			intensity = 20 * np.log10(np.abs(velocity/self.db_reference))
+		data_mean = int(round(np.mean(data)))
+		data = data - data_mean 
 
 		if self.csv_output:
 			with open(self.outfile, 'a') as csvfile:
@@ -146,8 +144,7 @@ class Write(rs.ConsumerThread):
 				df['voltage_counts'] = data
 
 				if self.scaling:
-					df['velocity[m/s]'] = velocity
-					df['intensity[dB]'] = intensity
+					df['velocity[m/s]'] = data / self.sensitivity
 
 				if self.header:
 					df.to_csv(csvfile, header=True, index=False, line_terminator='\n')
@@ -159,8 +156,35 @@ class Write(rs.ConsumerThread):
 					printM('%s records to %s'
 							% (len(t.data), self.outfile), self.sender)
 
-		#if self.db_push:
-			# TODO push data into influx 
+		if self.db_push:
+			data[data < self.db_reference * self.sensitivity] = self.db_reference * self.sensitivity	# set value less than dB ref to 0dB
+			
+			# Datetime timestamps (for influx)
+			starttime = datetime.utcfromtimestamp(t.stats.starttime.timestamp)
+			endtime = datetime.utcfromtimestamp(t.stats.endtime.timestamp)
+			middle = starttime + (endtime-starttime)/2
+
+			# 10s max dB intensity
+			np.seterr(divide = 'ignore') 
+			max_intensity = max(20 * np.log10(np.abs((data/self.sensitivity)/self.db_reference)))
+			np.seterr(divide = 'warn')
+			self.write_api.write("rsudp-test", "empa", {"measurement": "10_seconds", "tags": {"location": "empa_lab"}, "fields": {"max_intensity": max_intensity}, "time":middle})
+			# 10s Leq
+			leq = 10 * np.log10(np.power(data / self.sensitivity, 2).mean() / (self.db_reference)**2)
+			self.write_api.write("rsudp-test", "empa", {"measurement": "10_seconds", "tags": {"location": "empa_lab"}, "fields": {"leq": leq}, "time":middle})
+
+			# ~1s max dB intensity and Leq
+			data_splits = np.array_split(data, 10)
+			i = 0
+			for split in data_splits:
+				np.seterr(divide = 'ignore') 
+				max_intensity = max(20 * np.log10(np.abs((split/self.sensitivity)/self.db_reference)))
+				np.seterr(divide = 'warn')
+				leq = 10 * np.log10(np.power(split / self.sensitivity, 2).mean() / (self.db_reference)**2)
+				timestamp_split = starttime + i*(endtime-starttime)/10
+				self.write_api.write("rsudp-test", "empa", {"measurement": "1_second", "tags": {"location": "empa_lab"}, "fields": {"max": max_intensity}, "time":timestamp_split})
+				self.write_api.write("rsudp-test", "empa", {"measurement": "1_second", "tags": {"location": "empa_lab"}, "fields": {"leq": leq}, "time":timestamp_split})
+				i = i + 1
 
 
 	def write(self, stream=False):

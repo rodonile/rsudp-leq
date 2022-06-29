@@ -57,7 +57,7 @@ def default_settings(output_dir='%s/rsudp' % os.path.expanduser('~').replace('\\
         "a_sta": 0.91,
         "a_lta": 0.99999,
         "static_lta": true,
-        "lta": 10,
+        "lta": 8,
         "threshold": 7,
         "reset": 5,
         "scaling": true},
