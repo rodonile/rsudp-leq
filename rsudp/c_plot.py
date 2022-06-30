@@ -274,7 +274,7 @@ class Plot:
 		event_timestamp = event[1].timestamp
 		event_time_ZH = datetime.fromtimestamp(event_timestamp, tz=pytz.timezone("Europe/Zurich"))
 		title_time_str = event_time_ZH.strftime('%Y-%m-%d %H:%M:%S.%f')[:22]
-		event_time_str = event_time_ZH.strftime('%Y-%m-%d-%H.%M.%S')			# event time for filename
+		event_time_str = event_time_ZH.strftime('%Y-%m-%d --- %H.%M.%S')			# event time for filename
 
 		# change title (just for a moment)
 		self.fig.suptitle('%s.%s detected event - %s Europe/Zurich time' # title
