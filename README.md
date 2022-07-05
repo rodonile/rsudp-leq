@@ -51,17 +51,17 @@ IIR first order filter:
     a <-- "remembering" factor (lower = filter forgets old values easily)
     a ~ 10 ^ ( filter_loss[dB] / (20 * T * fs) )
 
-- **a_sta**: "remembering" factor for the IIR filter for the STA calculation
-- **a_lta**: "remembering" factor for the IIR filter for the LTA calculation
-- **static_lta**: use a static value for the LTA instead of an Leq calculation (this is the preferred method, as varying LTA would contains also high noise events in the calculation). Default: true.
+- **a_sta**: "remembering" factor for the IIR filter for the STA calculation.
+- **a_lta**: "remembering" factor for the IIR filter for the LTA calculation.
+- **static_lta**: use a static value for the LTA instead of an Leq calculation (this is the preferred method, as varying LTA would contain also high noise events in the calculation). Default: true.
 - **lta**: Value for LTA if *static_lta* is set to true. Default 10dB (computed with 1 $\mu m/s$ (1e-6) dB reference).
 - **scaling**: compute velocity using the *scaling_sensitivity* parameter. If disabled the calculations are performed using voltage counts from the AD converter. Default: true.
 
 ## write:
-This module can be used to write raw data (voltage counts from A/D converter) to a csv file on the local disk and/or to push Leq data periodically (1s intervals) to a database (influxDB).
+This module can be used to write raw data (voltage counts from A/D converter) to a csv file on the local disk and/or to push data periodically (at 1s intervals) to a database (influxDB). Every second the module pushes Leq values (computed over a 1s interval), as well as the maximum recorded intensity value (again measured on a 1s interval).
 
 - **csv_output**: write raw data to local file in the output_dir. Default: false.
-- **database_push**: push Leq to an influxDB bucket at intervals of 1s. Default: true.
+- **database_push**: push data to an influxDB bucket at intervals of 1s. Default: true.
 - **database_URL**: database URL.
 - **database_PORT**: database PORT. Default: 8086 (influxb default port). 
 - **database_BUCKET**:
@@ -85,7 +85,7 @@ This module is used to print data directly to the command line as it arrives fro
 
 
 # Database storage and visualization
-If the **database_push** feature is enabled in the [write](#write) module, rsudp pushes metrics to an time-series database (influxDB). Refer to the README in the **visualization** folder for instruction on how to setup the database and visualization stack, add new influxdb buckets, grafana dashboards, etc..
+If the **database_push** feature is enabled in the [write](#write) module, rsudp pushes metrics to a time-series database (influxDB). Refer to the README in the [visualization](visualization) folder for instruction on how to setup the database and visualization stack, add new influxdb buckets, grafana dashboards, etc..
 
 Example:
 
