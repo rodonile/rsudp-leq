@@ -1,0 +1,30 @@
+version: "3"
+services:
+# INFLUXDB TIME-SERIES DATABASE
+  influxdb:
+    image: influxdb:2.3
+    container_name: influxdb
+    ports:
+      - "8086:8086"
+    volumes:
+      - <data-path>:/var/lib/influxdb2
+      - <config-path>:/etc/influxdb2
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=<username>
+      - DOCKER_INFLUXDB_INIT_PASSWORD=<password>
+      - DOCKER_INFLUXDB_INIT_ORG=<organization>
+      - DOCKER_INFLUXDB_INIT_BUCKET=telegraf
+      - DOCKER_INFLUXDB_INIT_RETENTION=1w
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=<TOKEN>
+    restart: unless-stopped
+
+  #GRAFANA (visualization UI)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    volumes:
+      - <data-path>:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
