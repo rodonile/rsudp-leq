@@ -38,11 +38,11 @@ This is the standard live plotting module from rsudp extended to enable displayi
 - **voltage**: shows live voltage estimation. Default: false.
 - **fullscreen**: fullscreen window mode. Default: true
 - **kiosk**: fullscreen + force the plot to fill the entire screen (used for showing continuously in monitoring display). Default: false.
-- **event_screenshot**: produce a screenshot of the waveforms/spectrogram when an alert is triggered (e.g. by the alert_leq_IIR module)
+- **event_screenshot**: produce a screenshot of the waveforms/spectrogram when an alert is triggered (e.g. by the alert_leq_IIR module). Default: true.
 - **scaling**: compute velocity using the *scaling_sensitivity* parameter. If disabled the calculations are performed using voltage counts from the AD converter. Default: true.
 
 ## alert_leq_IIR:
-This module uses an IIR filter to compute the STA and LTA Leq, hence it doesn't require storing all the samples in the buffer. This allows to have longer LTA intervals while running without issue on light hardware (e.g. Raspberry Pi). Also it doesn't require a "warmup" time before the trigger is activated. The module also supports a static value for the LTA Leq.
+This module triggers an alarm when the short-term Leq (Equivalent Noise Level) value goes above a certain treshold. The alert trigger is implemented with the STA/LTA method. Unlike the main alert module in rsudp, thie module uses an IIR filter to compute the STA and LTA Leq values, hence it doesn't require storing all the samples in the buffer. This allows to have longer LTA intervals while running without issue on light hardware (e.g. Raspberry Pi). Also it doesn't require a "warmup" time before the trigger is activated. The module also supports a static value for the LTA Leq, if setting a static treshold is desired.
 
 IIR first order filter:
 
@@ -53,7 +53,7 @@ IIR first order filter:
 
 - **a_sta**: "remembering" factor for the IIR filter for the STA calculation
 - **a_lta**: "remembering" factor for the IIR filter for the LTA calculation
-- **static_lta**: use a static value for the LTA instead of an Leq calculation (preferred method, as varying LTA would contains also high noise events in the calculation)
+- **static_lta**: use a static value for the LTA instead of an Leq calculation (this is the preferred method, as varying LTA would contains also high noise events in the calculation). Default: true.
 - **lta**: Value for LTA if *static_lta* is set to true. Default 10dB (computed with 1 $\mu m/s$ (1e-6) dB reference).
 - **scaling**: compute velocity using the *scaling_sensitivity* parameter. If disabled the calculations are performed using voltage counts from the AD converter. Default: true.
 
@@ -85,7 +85,7 @@ This module is used to print data directly to the command line as it arrives fro
 
 
 # Database storage and visualization
-If this feature is enabled in the [write](#write) module, rsudp pushed metrics to an time-series database (influxDB). Refer to the README in the **visualization** folder for instruction on how to setup the databas and visualization stack, add new influxdb buckets, grafana dashboards, etc..
+If the **database_push** feature is enabled in the [write](#write) module, rsudp pushes metrics to an time-series database (influxDB). Refer to the README in the **visualization** folder for instruction on how to setup the database and visualization stack, add new influxdb buckets, grafana dashboards, etc..
 
 Example:
 
