@@ -2,6 +2,10 @@ import rsudp.raspberryshake as rs
 from rsudp import COLOR, printM, printW
 import os
 import json
+# Imports for time management
+from datetime import datetime, timedelta
+from dateutil import tz
+import pytz
 
 
 def dump_default(settings_loc, default_settings):
@@ -70,7 +74,7 @@ def default_settings(output_dir='%s/rsudp' % os.path.expanduser('~').replace('\\
 		"database_PORT": 8086,
 		"scaling": true},
     "forward": {
-        "enabled": false,
+        "enabled": true,
         "address": ["192.168.10.2"],
         "port": [8888],
         "channels": ["EHZ"],
@@ -257,7 +261,17 @@ def msg_alarm(event_time):
 	:rtype: bytes
 	:return: the ``ALARM`` message, ready to be put on the queue
 	'''
-	return b'ALARM %s' % bytes(str(event_time), 'utf-8')
+	# Convert time to Europe/ZH (doesn't work, don't know why...)
+	#dt_str  = event_time.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+	#dt_format  = "%Y-%m-%dT%H:%M:%S.%fZ"
+	## Create datetime object in local timezone
+	#dt_utc = datetime.strptime(dt_str, dt_format)
+	#dt_utc = dt_utc.replace(tzinfo=pytz.UTC)
+	#dt_local = dt_utc.astimezone(pytz.timezone("Europe/Zurich"))
+	#dt_format_out  = "%Y-%m-%d --- %H:%M:%S"
+	#local_time_str = dt_local.strftime(dt_format_out)
+	#return b'ALARM %s' % bytes(local_time_str + " [Zurich Timezone]", 'utf-8')
+	return b'ALARM %s' % bytes(str(event_time) + "[UTC]", 'utf-8')
 
 
 def msg_reset(reset_time):
@@ -279,7 +293,7 @@ def msg_reset(reset_time):
 	:rtype: bytes
 	:return: the ``RESET`` message, ready to be put on the queue
 	'''
-	return b'RESET %s' % bytes(str(reset_time), 'utf-8')
+	return b'RESET %s' % bytes(str(reset_time) + "[UTC]", 'utf-8')
 
 
 def msg_imgpath(event_time, figname):

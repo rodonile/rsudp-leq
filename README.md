@@ -39,7 +39,7 @@ This is the standard live plotting module from rsudp extended to enable displayi
 - **fullscreen**: fullscreen window mode. Default: true
 - **kiosk**: fullscreen + force the plot to fill the entire screen (used for showing continuously in monitoring display). Default: false.
 - **event_screenshot**: produce a screenshot of the waveforms/spectrogram when an alert is triggered (e.g. by the alert_leq_IIR module). Default: true.
-- **scaling**: compute velocity using the *scaling_sensitivity* parameter. If disabled the calculations are performed using voltage counts from the AD converter. Default: true.
+- **scaling**: compute velocity using the *scaling_sensitivity* parameter. If disabled the plot shows voltage counts from the AD converter (then of course alse the db_reference parameter needs to be adjusted to a value that makes sense). Default: true.
 
 ## alert_leq_IIR:
 This module triggers an alarm when the short-term Leq (Equivalent Noise Level) value goes above a certain treshold. The alert trigger is implemented with the STA/LTA method. Unlike the main alert module in rsudp, thie module uses an IIR filter to compute the STA and LTA Leq values, hence it doesn't require storing all the samples in the buffer. This allows to have longer LTA intervals while running without issue on light hardware (e.g. Raspberry Pi). Also it doesn't require a "warmup" time before the trigger is activated. The module also supports a static value for the LTA Leq, if setting a static treshold is desired.
@@ -55,7 +55,7 @@ IIR first order filter:
 - **a_lta**: "remembering" factor for the IIR filter for the LTA calculation.
 - **static_lta**: use a static value for the LTA instead of an Leq calculation (this is the preferred method, as varying LTA would contain also high noise events in the calculation). Default: true.
 - **lta**: Value for LTA if *static_lta* is set to true. Default 10dB (computed with 1 $\mu m/s$ (1e-6) dB reference).
-- **scaling**: compute velocity using the *scaling_sensitivity* parameter. If disabled the calculations are performed using voltage counts from the AD converter. Default: true.
+- **scaling**: compute velocity using the *scaling_sensitivity* parameter. If disabled the calculations are performed using voltage counts from the AD converter (then of course alse the db_reference and lta parameters needs to be adjusted to values that makes sense). Default: true.
 
 ## write:
 This module can be used to write raw data (voltage counts from A/D converter) to a csv file on the local disk and/or to push data periodically (at 1s intervals) to a database (influxDB). Every second the module pushes Leq values (computed over a 1s interval), as well as the maximum recorded intensity value (again measured on a 1s interval).

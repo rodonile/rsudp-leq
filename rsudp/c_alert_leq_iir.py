@@ -310,10 +310,10 @@ class Alert_Leq_IIR(rs.ConsumerThread):
 
 			elif n == 0:
 				if self.static_lta:
-					printM('Starting Alert_Leq_IIR trigger with a_STA=%s, LTA=%s dB, and TRESHOLD=%s dB'
+					printM('Starting Alert_Leq_IIR trigger with a_STA=%s, LTA=%s dB, and TRESHOLD=LTA + %s dB'
 							% (self.a_sta, self.lta, self.thresh), self.sender)
 				else:
-					printM('Starting Alert_Leq_IIR trigger with a_STA=%s, a_LTA=%s, and TRESHOLD=%s dB'
+					printM('Starting Alert_Leq_IIR trigger with a_STA=%s, a_LTA=%s, and TRESHOLD=LTA + %s dB'
 					   		% (self.a_sta, self.a_lta, self.thresh), self.sender)
 
 			elif n == 3:
