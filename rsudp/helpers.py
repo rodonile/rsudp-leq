@@ -72,8 +72,8 @@ def default_settings(output_dir='%s/rsudp' % os.path.expanduser('~').replace('\\
 		"database_push": true,
 		"database_URL": "localhost",
 		"database_PORT": 8086,
-		"database_BUCKET": rsudp,
-		"database_TOKEN": <INFLUXDB_API_TOKEN>,
+		"database_BUCKET": "rsudp",
+		"database_TOKEN": "<INFLUXDB_API_TOKEN>",
 		"scaling": true},
     "forward": {
         "enabled": true,
