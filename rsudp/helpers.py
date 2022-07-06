@@ -72,6 +72,8 @@ def default_settings(output_dir='%s/rsudp' % os.path.expanduser('~').replace('\\
 		"database_push": true,
 		"database_URL": "localhost",
 		"database_PORT": 8086,
+		"database_BUCKET": rsudp,
+		"database_TOKEN": <INFLUXDB_API_TOKEN>,
 		"scaling": true},
     "forward": {
         "enabled": true,
@@ -271,7 +273,7 @@ def msg_alarm(event_time):
 	#dt_format_out  = "%Y-%m-%d --- %H:%M:%S"
 	#local_time_str = dt_local.strftime(dt_format_out)
 	#return b'ALARM %s' % bytes(local_time_str + " [Zurich Timezone]", 'utf-8')
-	return b'ALARM %s' % bytes(str(event_time) + "[UTC]", 'utf-8')
+	return b'ALARM %s' % bytes(str(event_time) + " [UTC]", 'utf-8')
 
 
 def msg_reset(reset_time):
@@ -293,7 +295,7 @@ def msg_reset(reset_time):
 	:rtype: bytes
 	:return: the ``RESET`` message, ready to be put on the queue
 	'''
-	return b'RESET %s' % bytes(str(reset_time) + "[UTC]", 'utf-8')
+	return b'RESET %s' % bytes(str(reset_time) + " [UTC]", 'utf-8')
 
 
 def msg_imgpath(event_time, figname):
