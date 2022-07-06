@@ -22,7 +22,7 @@ class Write(rs.ConsumerThread):
 	:param bool debug: whether or not to display messages when writing data to disk.
 	"""
 	def __init__(self, q, data_dir, testing=False, debug=False, cha='all',csv_output=False,
-					database_push=True, database_URL="localhost", database_PORT=8086, database_BUCKET=rsudp, database_TOKEN="token",
+					database_push=True, database_URL="localhost", database_PORT=8086, database_BUCKET="rsudp", database_TOKEN="token",
 					scaling=True, sensitivity=250000000, db_reference=1e-6):
 		"""
 		Initialize the process
