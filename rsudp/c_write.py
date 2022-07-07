@@ -22,7 +22,7 @@ class Write(rs.ConsumerThread):
 	:param bool debug: whether or not to display messages when writing data to disk.
 	"""
 	def __init__(self, q, data_dir, testing=False, debug=False, cha='all',csv_output=False,
-					database_push=True, database_URL="localhost", database_PORT=8086, database_BUCKET="rsudp", database_TOKEN="token",
+					database_push=True, database_URL="http://localhost:8086", database_BUCKET="rsudp", database_TOKEN="token",
 					scaling=True, sensitivity=250000000, db_reference=1e-6):
 		"""
 		Initialize the process
@@ -37,7 +37,6 @@ class Write(rs.ConsumerThread):
 		self.csv_output = csv_output
 		self.db_push = database_push
 		self.db_URL = database_URL
-		self.db_PORT = database_PORT 
 		self.db_BUCKET = database_BUCKET
 		self.db_TOKEN = database_TOKEN
 		self.scaling = scaling
@@ -56,8 +55,7 @@ class Write(rs.ConsumerThread):
 		self.header = True 				# flag for setting header to csv file
 		
 		# InfluxDB writer
-		#self.client = InfluxDBClient.from_config_file("_influxdb_config.ini") # not working...
-		self.client = InfluxDBClient(url="http://localhost:8086", token="OhicM0adEjpBHYX9iRbigBBavXXzAS-OPuU68wguAMOpIEx-SsAzJYgB306EB6uKjBKy-EeRZSeAmKoW2eAxbQ==", 
+		self.client = InfluxDBClient(url=self.db_URL, token=self.db_TOKEN, 
 									 org="empa", debug=False)
 		self.write_api = self.client.write_api(write_options=WriteOptions(batch_size=1))
 
@@ -167,13 +165,13 @@ class Write(rs.ConsumerThread):
 			middle = starttime + (endtime-starttime)/2
 
 			# 10s max dB intensity
-			np.seterr(divide = 'ignore') 
-			max_intensity = max(20 * np.log10(np.abs((data/self.sensitivity)/self.db_reference)))
-			np.seterr(divide = 'warn')
-			self.write_api.write("rsudp-test", "empa", {"measurement": "10_seconds", "tags": {"location": "empa_lab"}, "fields": {"max_intensity": max_intensity}, "time":middle})
-			# 10s Leq
-			leq = 10 * np.log10(np.power(data / self.sensitivity, 2).mean() / (self.db_reference)**2)
-			self.write_api.write("rsudp-test", "empa", {"measurement": "10_seconds", "tags": {"location": "empa_lab"}, "fields": {"leq": leq}, "time":middle})
+			#np.seterr(divide = 'ignore') 
+			#max_intensity = max(20 * np.log10(np.abs((data/self.sensitivity)/self.db_reference)))
+			#np.seterr(divide = 'warn')
+			#self.write_api.write(self.db_BUCKET, "empa", {"measurement": "10_seconds", "tags": {"location": "empa_lab"}, "fields": {"max_intensity": max_intensity}, "time":middle})
+			## 10s Leq
+			#leq = 10 * np.log10(np.power(data / self.sensitivity, 2).mean() / (self.db_reference)**2)
+			#self.write_api.write(self.db_BUCKET, "empa", {"measurement": "10_seconds", "tags": {"location": "empa_lab"}, "fields": {"leq": leq}, "time":middle})
 
 			# ~1s max dB intensity and Leq
 			data_splits = np.array_split(data, 10)
@@ -184,8 +182,8 @@ class Write(rs.ConsumerThread):
 				np.seterr(divide = 'warn')
 				leq = 10 * np.log10(np.power(split / self.sensitivity, 2).mean() / (self.db_reference)**2)
 				timestamp_split = starttime + i*(endtime-starttime)/10
-				self.write_api.write("rsudp-test", "empa", {"measurement": "1_second", "tags": {"location": "empa_lab"}, "fields": {"max": max_intensity}, "time":timestamp_split})
-				self.write_api.write("rsudp-test", "empa", {"measurement": "1_second", "tags": {"location": "empa_lab"}, "fields": {"leq": leq}, "time":timestamp_split})
+				self.write_api.write(self.db_BUCKET, "empa", {"measurement": "1_second", "tags": {"location": "empa_lab"}, "fields": {"max": max_intensity}, "time":timestamp_split})
+				self.write_api.write(self.db_BUCKET, "empa", {"measurement": "1_second", "tags": {"location": "empa_lab"}, "fields": {"leq": leq}, "time":timestamp_split})
 				i = i + 1
 
 
@@ -219,7 +217,7 @@ class Write(rs.ConsumerThread):
 			printM('CSV output directory: %s' % (self.outdir.replace('\\', '/')), self.sender)
 			printM('Beginning CSV output.', self.sender)
 		if self.db_push:
-			printM('Database URL: %s and PORT: %s' % (self.db_URL, self.db_PORT), self.sender)
+			printM('Database URL: %s' % (self.db_URL), self.sender)
 			printM('Beginning database push.', self.sender)
 		wait_pkts = (self.numchns * 10) / (rs.tf / 1000) 	# comes out to 10 seconds (tf is in ms)
 

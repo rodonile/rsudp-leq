@@ -62,10 +62,9 @@ This module can be used to write raw data (voltage counts from A/D converter) to
 
 - **csv_output**: write raw data to local file in the output_dir. Default: false.
 - **database_push**: push data to an influxDB bucket at intervals of 1s. Default: true.
-- **database_URL**: database URL.
-- **database_PORT**: database PORT. Default: 8086 (influxb default port). 
-- **database_BUCKET**:
-- **database_TOKEN**: 
+- **database_URL**: database URL. Default: http://localhost:8086 (influxdB default port).
+- **database_BUCKET**: influxDB bucket name (bucket needs to be created manually on the database). Default: rsudp.
+- **database_TOKEN**: influxDB API token with write access to the database_BUCKET.
 - **scaling**: compute velocity using the *scaling_sensitivity* parameter. If disabled the calculations are performed using voltage counts from the AD converter. Default: true.      
 
 ## forward:

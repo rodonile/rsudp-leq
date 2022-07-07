@@ -7,11 +7,6 @@
         "debug": true,
         "scaling_sensitivity": 250000000,
         "db_reference": 1e-6},
-    "printdata": {
-        "enabled": false},
-    "write": {
-        "enabled": false,
-        "channels": ["EHZ"]},
     "plot": {
         "enabled": true,
 		"channels": ["EHZ"],
@@ -31,16 +26,28 @@
         "a_sta": 0.91,
         "a_lta": 0.99999,
         "static_lta": true,
-        "lta": 10,
-        "threshold": 7,
-        "reset": 5,
+        "lta": 8,
+        "threshold": 5,
+        "reset": 4,
         "scaling": true},
+    "write": {
+        "enabled": true,
+        "channels": ["EHZ"],
+		"csv_output": false,
+		"database_push": true,
+		"database_URL": "http://localhost:8086",
+		"database_BUCKET": "rsudp",
+		"database_TOKEN": "<INFLUXDB_API_TOKEN>",
+		"scaling": true},
     "forward": {
-        "enabled": false,
-        "address": ["192.168.1.254"],
+        "enabled": true,
+        "address": ["192.168.10.2"],
         "port": [8888],
-        "channels": ["all"],
-        "fwd_data": true,
-        "fwd_alarms": false}
+        "channels": ["EHZ"],
+        "fwd_data": false,
+        "fwd_alarms": true},
+    "printdata": {
+        "enabled": false}
 }
+
 

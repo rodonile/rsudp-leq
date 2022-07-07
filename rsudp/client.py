@@ -178,13 +178,12 @@ def run(settings, debug):
 		csv_output = settings['write']['csv_output']
 		db_push = settings['write']['database_push']
 		db_URL = settings['write']['database_URL']
-		db_PORT = settings['write']['database_PORT']
 		db_BUCKET = settings['write']['database_BUCKET']
 		db_TOKEN = settings['write']['database_TOKEN']
 		scaling = settings['write']['scaling']
 		q = mk_q()
 		WRITER = Write(q=q, data_dir=output_dir, cha=cha, testing=TESTING, csv_output=csv_output,
-						database_push=db_push, database_URL=db_URL, database_PORT=db_PORT, database_BUCKET=db_BUCKET, database_TOKEN=db_TOKEN, 
+						database_push=db_push, database_URL=db_URL, database_BUCKET=db_BUCKET, database_TOKEN=db_TOKEN, 
 						scaling=scaling, sensitivity=sensitivity, db_reference=db_ref)
 		mk_p(WRITER)
 
