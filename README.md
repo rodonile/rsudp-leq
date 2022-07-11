@@ -1,5 +1,5 @@
 # Rsudp-Leq
-This is an extended version of [rsudp](https://github.com/raspishake/rsudp) with only the relevant modules and dependencies for the use case of small ground vibration disturbance detection, ready for production deployment. Tested and deployed for Windows 10. Some dependencies from the original [rsudp](https://github.com/raspishake/rsudp) software were removed due to causing issues and/or not working at on Windows 10.
+This is an extended version of [rsudp](https://github.com/raspishake/rsudp) with only the relevant modules and dependencies for the use case of small ground vibration disturbance detection, ready for production deployment. Tested and deployed for Windows 10. Some dependencies from the original [rsudp](https://github.com/raspishake/rsudp) software were removed due to causing issues and/or not working at all on Windows 10.
 
 ## About:
 
