@@ -1,9 +1,9 @@
 # Rsudp-Leq
-This is an updated version of [rsudp](https://github.com/raspishake/rsudp) with only the relevant modules and dependencies for the use case of small ground vibration disturbance detection, ready for production deployment. Tested and deployed for Windows 10. Some dependencies from the original [rsudp](https://github.com/raspishake/rsudp) software were removed due to causing issues and/or not working at on Windows 10.
+This is an extended version of [rsudp](https://github.com/raspishake/rsudp) with only the relevant modules and dependencies for the use case of small ground vibration disturbance detection, ready for production deployment. Tested and deployed for Windows 10. Some dependencies from the original [rsudp](https://github.com/raspishake/rsudp) software were removed due to causing issues and/or not working at on Windows 10.
 
 ## About:
 
-- :star: Main goal :star:: small disturbance detection, i.e. trigger alarm on trains nearby, construction work, etc. that might disturb measurements in acoustically controlled environments. 
+- :star: Main goal: small disturbance detection, i.e. trigger alarm on trains nearby, construction work, etc. that might disturb measurements in acoustically controlled environments. 
 - :new: Plot module from [rsudp](https://github.com/raspishake/rsudp) extended to plot intensity and equivalent continuous sound level (Leq).
 - :new: New alarm module (c_alarm_leq_iir.py) that uses trigger mechanism based on Equivalent Sound-Pressure Level (Leq): short-term vs long-term or static Leq.
 - :new: Write module from [rsudp](https://github.com/raspishake/rsudp) extended to periodically push Leq and maximum intensity levels [dB] (over 1s time-periods) to influxDB Time-series database for historical data visualization.
