@@ -1,5 +1,5 @@
 # Rsudp-Leq
-This is an extended version of [rsudp](https://github.com/raspishake/rsudp) with only the relevant modules and dependencies for the use case of small ground vibration disturbance detection, ready for production deployment. Tested and deployed for Windows 10. Some dependencies from the original [rsudp](https://github.com/raspishake/rsudp) software were removed due to causing issues and/or not working at all on Windows 10.
+This is an extended version of [rsudp](https://github.com/raspishake/rsudp) with only the relevant modules and dependencies for the use case of small ground vibration disturbance detection, ready for production deployment. Some dependencies from the original [rsudp](https://github.com/raspishake/rsudp) software were removed due to causing issues and/or not working at all on Windows 10.
 
 ## About:
 
@@ -8,6 +8,7 @@ This is an extended version of [rsudp](https://github.com/raspishake/rsudp) with
 - :new: New alarm module (c_alarm_leq_iir.py) that uses trigger mechanism based on Equivalent Sound-Pressure Level (Leq): short-term vs long-term or static Leq.
 - :new: Write module from [rsudp](https://github.com/raspishake/rsudp) extended to periodically push Leq and maximum intensity levels [dB] (over 1s time-periods) to influxDB Time-series database for historical data visualization.
 - :white_check_mark: Coded and tested only for RS1D / 1 channel geophone.
+- :white_check_mark: Tested and deployed on Windows 10. 
 
 
 ## Table of Contents  
