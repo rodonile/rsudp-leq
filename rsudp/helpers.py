@@ -31,7 +31,7 @@ def default_settings(output_dir='%s/rsudp' % os.path.expanduser('~').replace('\\
 	:rtype: str
 	'''
 	# Inventory file location
-	inventory_file_loc='%s/Documents/GitHub/rsudp/rsudp/inventory_files/R6833_response.xml' % os.path.expanduser('~').replace('\\', '/')
+	inventory_file_loc='%s/Documents/GitHub/rsudp-leq/rsudp/inventory_files/R6833_response.xml' % os.path.expanduser('~').replace('\\', '/')
 
 	def_settings = r"""{
     "settings": {
