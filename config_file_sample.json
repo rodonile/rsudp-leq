@@ -9,8 +9,8 @@
         "db_reference": 1e-6},
     "plot": {
         "enabled": true,
-		"channels": ["EHZ"],
-		"units": "VEL",
+        "channels": ["EHZ"],
+        "units": "VEL",
         "duration": 60,
         "spectrogram": true,
         "decibel": true,
@@ -22,7 +22,7 @@
     "alert_leq_iir": {
         "enabled": true,
         "channel": "HZ",
-		"units": "VEL",
+        "units": "VEL",
         "a_sta": 0.91,
         "a_lta": 0.99999,
         "static_lta": true,
@@ -33,12 +33,12 @@
     "write": {
         "enabled": true,
         "channels": ["EHZ"],
-		"csv_output": false,
-		"database_push": true,
-		"database_URL": "http://localhost:8086",
-		"database_BUCKET": "rsudp",
-		"database_TOKEN": "<INFLUXDB_API_TOKEN>",
-		"scaling": true},
+        "csv_output": false,
+        "database_push": true,
+        "database_URL": "http://localhost:8086",
+        "database_BUCKET": "rsudp",
+        "database_TOKEN": "<INFLUXDB_API_TOKEN>",
+        "scaling": true},
     "forward": {
         "enabled": true,
         "address": ["192.168.10.2"],
